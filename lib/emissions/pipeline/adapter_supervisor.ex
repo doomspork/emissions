@@ -1,9 +1,9 @@
 defmodule Emissions.Pipeline.AdapterSupervisor do
-  @moduledoc false
-
-  # Supervises all adapter consumers (one per configured adapter, plus
-  # the handler dispatcher). Uses :one_for_one so a crashed adapter
-  # consumer restarts independently.
+  @moduledoc """
+  Supervises all adapter consumers (one per configured adapter, plus
+  the handler dispatcher). Uses `:one_for_one` so a crashed adapter
+  consumer restarts independently without affecting others.
+  """
 
   use Supervisor
 
