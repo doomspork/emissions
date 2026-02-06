@@ -46,35 +46,39 @@ defmodule Emissions.Pipeline.AdapterConsumer do
   def handle_events(events, _from, %{adapter: adapter_mod, state: adapter_state} = consumer) do
     filtered = filter_events(events, adapter_mod, adapter_state)
 
-    start_time = System.monotonic_time()
+    if filtered == [] do
+      {:noreply, [], consumer}
+    else
+      start_time = System.monotonic_time()
 
-    case adapter_mod.handle_events(filtered, adapter_state) do
-      {:ok, new_state} ->
-        duration = System.monotonic_time() - start_time
+      case adapter_mod.handle_events(filtered, adapter_state) do
+        {:ok, new_state} ->
+          duration = System.monotonic_time() - start_time
 
-        :telemetry.execute([:emissions, :adapter, :success], %{duration: duration}, %{
-          adapter: adapter_mod,
-          event_count: length(filtered)
-        })
+          :telemetry.execute([:emissions, :adapter, :success], %{duration: duration}, %{
+            adapter: adapter_mod,
+            event_count: length(filtered)
+          })
 
-        {:noreply, [], %{consumer | state: new_state}}
+          {:noreply, [], %{consumer | state: new_state}}
 
-      {:error, reason, new_state} ->
-        duration = System.monotonic_time() - start_time
+        {:error, reason, new_state} ->
+          duration = System.monotonic_time() - start_time
 
-        :telemetry.execute([:emissions, :adapter, :error], %{duration: duration}, %{
-          adapter: adapter_mod,
-          reason: reason,
-          event_count: length(filtered)
-        })
+          :telemetry.execute([:emissions, :adapter, :error], %{duration: duration}, %{
+            adapter: adapter_mod,
+            reason: reason,
+            event_count: length(filtered)
+          })
 
-        Logger.error(
-          "Adapter #{inspect(adapter_mod)} failed: #{inspect(reason)}",
-          adapter: adapter_mod,
-          reason: reason
-        )
+          Logger.error(
+            "Adapter #{inspect(adapter_mod)} failed: #{inspect(reason)}",
+            adapter: adapter_mod,
+            reason: reason
+          )
 
-        {:noreply, [], %{consumer | state: new_state}}
+          {:noreply, [], %{consumer | state: new_state}}
+      end
     end
   end
 

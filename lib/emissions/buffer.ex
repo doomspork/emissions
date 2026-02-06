@@ -128,6 +128,10 @@ defmodule Emissions.Buffer do
 
   @impl GenServer
   def handle_info({:EXIT, _pid, _reason}, events) do
+    :telemetry.execute([:emissions, :buffer, :terminated], %{count: 1}, %{
+      event_count: length(events)
+    })
+
     {:stop, :normal, events}
   end
 
