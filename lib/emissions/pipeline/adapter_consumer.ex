@@ -19,7 +19,7 @@ defmodule Emissions.Pipeline.AdapterConsumer do
   @doc false
   def child_spec({adapter_mod, adapter_opts}) do
     %{
-      id: {__MODULE__, adapter_mod},
+      id: {__MODULE__, adapter_mod, adapter_opts},
       start: {__MODULE__, :start_link, [{adapter_mod, adapter_opts}]},
       restart: :permanent
     }

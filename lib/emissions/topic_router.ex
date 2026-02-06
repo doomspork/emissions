@@ -30,6 +30,12 @@ defmodule Emissions.TopicRouter do
 
       @topic_by_event Enum.reduce(@mappings, %{}, fn {topic, events}, acc ->
                         Enum.reduce(events, acc, fn event, m ->
+                          if Map.has_key?(m, event) do
+                            raise ArgumentError,
+                                  "event #{inspect(event)} is mapped to both " <>
+                                    "#{inspect(Map.get(m, event))} and #{inspect(topic)}"
+                          end
+
                           Map.put(m, event, topic)
                         end)
                       end)

@@ -295,11 +295,12 @@ end
 |---|---|---|
 | `[:emissions, :buffer, :started]` | `%{count: 1}` | `%{}` |
 | `[:emissions, :buffer, :committed]` | `%{count: n}` | `%{event_count: n}` |
+| `[:emissions, :buffer, :terminated]` | `%{count: 1}` | `%{event_count: n}` |
 | `[:emissions, :event, :dropped]` | `%{count: 1}` | `%{event_name: atom(), reason: atom()}` |
 | `[:emissions, :adapter, :success]` | `%{duration: integer()}` | `%{adapter: module(), event_count: n}` |
-| `[:emissions, :adapter, :error]` | `%{duration: integer()}` | `%{adapter: module(), reason: term()}` |
+| `[:emissions, :adapter, :error]` | `%{duration: integer()}` | `%{adapter: module(), reason: term(), event_count: n}` |
 | `[:emissions, :handler, :success]` | `%{duration: integer()}` | `%{handler: module(), event: atom()}` |
-| `[:emissions, :handler, :error]` | `%{duration: integer()}` | `%{handler: module(), event: atom()}` |
+| `[:emissions, :handler, :error]` | `%{duration: integer()}` | `%{handler: module(), event: atom(), reason: term()}` |
 | `[:emissions, :handler, :ignored]` | `%{count: 1}` | `%{handler: module(), event: atom()}` |
 
 ## Contributing

@@ -7,9 +7,9 @@ defmodule Emissions.Application do
   def start(_type, _args) do
     children = [
       Emissions.BufferPool,
+      {Task.Supervisor, name: Emissions.TaskSupervisor},
       Emissions.Pipeline.Producer,
-      Emissions.Pipeline.AdapterSupervisor,
-      {Task.Supervisor, name: Emissions.TaskSupervisor}
+      Emissions.Pipeline.AdapterSupervisor
     ]
 
     opts = [strategy: :rest_for_one, name: Emissions.Supervisor]

@@ -33,9 +33,17 @@ defmodule Emissions.HandlerDispatcher do
     applicable = Enum.filter(handlers, &handler_matches?(&1, event.name))
 
     for handler <- applicable do
-      Task.Supervisor.start_child(Emissions.TaskSupervisor, fn ->
-        run_handler(handler, event)
-      end)
+      case Task.Supervisor.start_child(Emissions.TaskSupervisor, fn ->
+             run_handler(handler, event)
+           end) do
+        {:ok, _pid} ->
+          :ok
+
+        {:error, reason} ->
+          Logger.error(
+            "Failed to start task for handler #{inspect(handler)} on #{event.name}: #{inspect(reason)}"
+          )
+      end
     end
   end
 

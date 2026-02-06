@@ -92,24 +92,24 @@ defmodule Emissions.Testing do
       end)
   """
   defmacro assert_emitted(event_name) do
-    quote do
-      events = Emissions.Testing.events_named(unquote(event_name))
+    quote bind_quoted: [event_name: event_name] do
+      events = Emissions.Testing.events_named(event_name)
 
       assert length(events) > 0,
-             "Expected event #{inspect(unquote(event_name))} to be emitted, but it was not"
+             "Expected event #{inspect(event_name)} to be emitted, but it was not"
 
       events
     end
   end
 
   defmacro assert_emitted(event_name, fun) do
-    quote do
-      events = Emissions.Testing.events_named(unquote(event_name))
+    quote bind_quoted: [event_name: event_name, fun: fun] do
+      events = Emissions.Testing.events_named(event_name)
 
       assert length(events) > 0,
-             "Expected event #{inspect(unquote(event_name))} to be emitted, but it was not"
+             "Expected event #{inspect(event_name)} to be emitted, but it was not"
 
-      for event <- events, do: unquote(fun).(event)
+      for event <- events, do: fun.(event)
       events
     end
   end
@@ -118,11 +118,11 @@ defmodule Emissions.Testing do
   Asserts that no event with the given name was emitted.
   """
   defmacro refute_emitted(event_name) do
-    quote do
-      events = Emissions.Testing.events_named(unquote(event_name))
+    quote bind_quoted: [event_name: event_name] do
+      events = Emissions.Testing.events_named(event_name)
 
       assert events == [],
-             "Expected event #{inspect(unquote(event_name))} to not be emitted, but got #{length(events)}"
+             "Expected event #{inspect(event_name)} to not be emitted, but got #{length(events)}"
     end
   end
 
