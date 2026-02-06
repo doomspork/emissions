@@ -4,10 +4,17 @@ Emissions uses per-request event buffers to collect events during a unit of work
 
 ## Lifecycle
 
-```
-start() → emit() → emit() → ... → commit()      # deliver and terminate
-                                  → flush()       # deliver, keep buffer open
-                                  → terminate()   # discard, cleanup
+```mermaid
+stateDiagram-v2
+    [*] --> Idle
+    Idle --> Buffering: start()
+    Buffering --> Buffering: emit()
+    Buffering --> Delivered: commit()
+    Buffering --> Delivered: flush()
+    Buffering --> Discarded: terminate()
+    Delivered --> Buffering: emit() [after flush]
+    Delivered --> [*]: [after commit]
+    Discarded --> [*]
 ```
 
 ### Starting a Buffer
@@ -83,6 +90,28 @@ end
 ```
 
 Calling `terminate/0` when no buffer is active is a safe no-op.
+
+## Event Flow on Commit
+
+```mermaid
+sequenceDiagram
+    participant App as Application Code
+    participant Buf as Buffer (GenServer)
+    participant Pro as Pipeline Producer
+    participant AC as Adapter Consumers
+
+    App->>Buf: start()
+    activate Buf
+    App->>Buf: emit(:order_created, payload)
+    App->>Buf: emit(:order_shipped, payload)
+    App->>Buf: commit()
+    Buf->>Pro: notify(events)
+    Buf-->>App: :ok
+    deactivate Buf
+    Note over Buf: Buffer terminates
+    Pro->>AC: events (demand-driven)
+    AC->>AC: handle_events/2
+```
 
 ## Process Linking
 
