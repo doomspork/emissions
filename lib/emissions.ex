@@ -1,8 +1,8 @@
 defmodule Emissions do
   @moduledoc """
   Event emission library with pluggable adapters, per-request buffering,
-  and internal event handlers. Designed from production event systems built
-  at Stord and Hiive.
+  and internal event handlers. Designed based on production event systems
+  built at Stord and Hiive.
 
   ## Usage
 

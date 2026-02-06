@@ -20,7 +20,7 @@ Emissions provides a structured way to emit events to multiple destinations (Kaf
 
 ## Background
 
-Emissions extracts the event emission patterns we built and refined across high-scale Elixir systems at [Stord](https://stord.com) (supply-chain orchestration) and [Hiive](https://hiive.com) (private-market exchange). The buffer-commit lifecycle, GenStage fan-out, and adapter model were shaped by real-world needs: transactional safety, multi-destination delivery, and back-pressure under sustained load.
+Emissions extracts the event emission patterns we built and refined across high-scale Elixir systems at [Stord](https://stord.com) (supply-chain orchestration) and [Hiive](https://hiive.com) (private-market exchange). The buffer-commit lifecycle, GenStage fan-out, and adapter model were shaped by real-world needs: transactional safety, multi-destination delivery, and backpressure under sustained load.
 
 ## Installation
 
