@@ -630,6 +630,13 @@ code {
   color: var(--purple-800);
 }
 
+.step-note {
+  margin-top: 10px;
+  font-size: 0.9rem;
+  color: var(--gray-600);
+  line-height: 1.5;
+}
+
 .step-content pre {
   border-radius: var(--radius-md);
   overflow-x: auto;

@@ -157,26 +157,37 @@ config :emissions,
         <div class="step">
           <div class="step-number">2</div>
           <div class="step-content">
-            <h3>Emit events in your application code</h3>
-            <pre><code class="language-elixir">def create_order(params) do
-  Emissions.start()
+            <h3>Add the Plug to your Phoenix pipeline</h3>
+            <pre><code class="language-elixir"># router.ex — auto-manages buffer lifecycle per request
+pipeline :api do
+  plug :accepts, ["json"]
+  plug Emissions.Plug
+end</code></pre>
+            <p class="step-note">The plug starts a buffer for mutating requests, commits on 2xx responses, and terminates on errors. Just emit events in your controllers — no manual start/commit needed.</p>
+          </div>
+        </div>
 
+        <div class="step">
+          <div class="step-number">3</div>
+          <div class="step-content">
+            <h3>Emit events in your application code</h3>
+            <pre><code class="language-elixir">def create_order(conn, params) do
   case Orders.insert(params) do
     {:ok, order} ->
       Emissions.emit(:order_created, order, %{source: "api"})
-      Emissions.commit()
-      {:ok, order}
+      json(conn, %{id: order.id})
 
     {:error, changeset} ->
-      Emissions.terminate()
-      {:error, changeset}
+      conn
+      |> put_status(:unprocessable_entity)
+      |> json(%{errors: format_errors(changeset)})
   end
 end</code></pre>
           </div>
         </div>
 
         <div class="step">
-          <div class="step-number">3</div>
+          <div class="step-number">4</div>
           <div class="step-content">
             <h3>Route events to topics (optional)</h3>
             <pre><code class="language-elixir">defmodule MyApp.Topics do
@@ -351,6 +362,13 @@ MyApp.Topics.topic_for_event(:order_created)
           <h3>Topic Routing</h3>
           <p>Compile-time event-to-topic mapping with zero runtime overhead.</p>
         </a>
+        <a href="https://hexdocs.pm/emissions/plug-integration.html" class="guide-card" target="_blank" rel="noopener">
+          <div class="guide-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          </div>
+          <h3>Plug Integration</h3>
+          <p>Automatic buffer lifecycle management for Phoenix and Plug apps.</p>
+        </a>
         <a href="https://hexdocs.pm/emissions/testing.html" class="guide-card" target="_blank" rel="noopener">
           <div class="guide-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
@@ -392,6 +410,7 @@ MyApp.Topics.topic_for_event(:order_created)
         </div>
         <div class="footer-col">
           <h4>More</h4>
+          <a href="https://hexdocs.pm/emissions/plug-integration.html" target="_blank" rel="noopener">Plug Integration</a>
           <a href="https://hexdocs.pm/emissions/topic-routing.html" target="_blank" rel="noopener">Topic Routing</a>
           <a href="https://hexdocs.pm/emissions/testing.html" target="_blank" rel="noopener">Testing</a>
           <a href="https://hexdocs.pm/emissions/telemetry.html" target="_blank" rel="noopener">Telemetry</a>
