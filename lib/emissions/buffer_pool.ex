@@ -1,8 +1,10 @@
 defmodule Emissions.BufferPool do
-  @moduledoc false
+  @moduledoc """
+  DynamicSupervisor that manages per-request `Emissions.Buffer` processes.
 
-  # DynamicSupervisor that manages per-request Buffer processes.
-  # Started as part of the Emissions supervision tree.
+  Started as part of the Emissions supervision tree. Buffers are added and
+  removed dynamically as requests start and complete.
+  """
 
   use DynamicSupervisor
 
