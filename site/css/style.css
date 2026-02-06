@@ -345,8 +345,27 @@ code {
   font-size: 1.25rem;
   color: var(--gray-600);
   max-width: 640px;
-  margin: 0 auto 36px;
+  margin: 0 auto 12px;
   line-height: 1.8;
+}
+
+.hero-tagline {
+  font-size: 1rem;
+  color: var(--gray-500);
+  margin: 0 auto 36px;
+  letter-spacing: 0.02em;
+}
+
+.hero-tagline a {
+  color: var(--gray-500);
+  text-decoration: underline;
+  text-decoration-color: var(--purple-600);
+  text-underline-offset: 2px;
+  transition: color 0.2s ease;
+}
+
+.hero-tagline a:hover {
+  color: var(--purple-600);
 }
 
 .hero-actions {
