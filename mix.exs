@@ -48,7 +48,28 @@ defmodule Emissions.MixProject do
   defp docs do
     [
       main: "readme",
-      extras: ["README.md"],
+      extras: [
+        "README.md",
+        "LICENSE",
+        "docs/adapters.md",
+        "docs/handlers.md",
+        "docs/buffering.md",
+        "docs/pipeline.md",
+        "docs/topic-routing.md",
+        "docs/testing.md",
+        "docs/telemetry.md"
+      ],
+      groups_for_extras: [
+        Guides: [
+          "docs/adapters.md",
+          "docs/handlers.md",
+          "docs/buffering.md",
+          "docs/pipeline.md",
+          "docs/topic-routing.md",
+          "docs/testing.md",
+          "docs/telemetry.md"
+        ]
+      ],
       source_ref: "v#{@version}"
     ]
   end
