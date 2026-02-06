@@ -24,21 +24,32 @@ defmodule Emissions.TopicRouter do
       #=> [:orders, :inventory, :users]
   """
 
+  @doc false
+  def __build_topic_map__(mappings) do
+    mappings
+    |> Enum.flat_map(fn {topic, events} -> Enum.map(events, &{&1, topic}) end)
+    |> Enum.reduce(%{}, fn {event, topic}, acc ->
+      validate_no_duplicate!(acc, event, topic)
+      Map.put(acc, event, topic)
+    end)
+  end
+
+  defp validate_no_duplicate!(map, event, topic) do
+    case Map.fetch(map, event) do
+      {:ok, existing} ->
+        raise ArgumentError,
+              "event #{inspect(event)} is mapped to both #{inspect(existing)} and #{inspect(topic)}"
+
+      :error ->
+        :ok
+    end
+  end
+
   defmacro __using__(opts) do
     quote bind_quoted: [opts: opts] do
       @mappings Keyword.get(opts, :mappings, %{})
 
-      @topic_by_event Enum.reduce(@mappings, %{}, fn {topic, events}, acc ->
-                        Enum.reduce(events, acc, fn event, m ->
-                          if Map.has_key?(m, event) do
-                            raise ArgumentError,
-                                  "event #{inspect(event)} is mapped to both " <>
-                                    "#{inspect(Map.get(m, event))} and #{inspect(topic)}"
-                          end
-
-                          Map.put(m, event, topic)
-                        end)
-                      end)
+      @topic_by_event Emissions.TopicRouter.__build_topic_map__(@mappings)
 
       @doc """
       Returns the topic for the given event name, or `nil` if unmapped.
