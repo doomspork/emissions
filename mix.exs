@@ -37,6 +37,7 @@ defmodule Emissions.MixProject do
       {:gen_stage, "~> 1.2"},
       {:telemetry, "~> 1.0"},
       {:plug, "~> 1.14", optional: true},
+      {:phoenix, "~> 1.7", optional: true},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
       {:ex_doc, "~> 0.34", only: :dev, runtime: false}
@@ -59,7 +60,7 @@ defmodule Emissions.MixProject do
   defp dialyzer do
     [
       plt_file: {:no_warn, "priv/plts/dialyzer.plt"},
-      plt_add_apps: [:mix, :plug]
+      plt_add_apps: [:mix, :plug, :phoenix]
     ]
   end
 
@@ -84,6 +85,7 @@ defmodule Emissions.MixProject do
         "docs/handlers.md",
         "docs/buffering.md",
         "docs/plug-integration.md",
+        "docs/phoenix-channels.md",
         "docs/pipeline.md",
         "docs/topic-routing.md",
         "docs/testing.md",
@@ -94,6 +96,7 @@ defmodule Emissions.MixProject do
           "docs/adapters.md",
           "docs/handlers.md",
           "docs/buffering.md",
+          "docs/phoenix-channels.md",
           "docs/pipeline.md",
           "docs/topic-routing.md",
           "docs/testing.md",

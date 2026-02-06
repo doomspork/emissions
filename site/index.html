@@ -96,7 +96,7 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
           </div>
           <h3>Pluggable Adapters</h3>
-          <p>Deliver events to Kafka, WebSockets, webhooks, or anywhere else with a simple behaviour.</p>
+          <p>Built-in Phoenix Channels adapter for real-time WebSocket delivery, plus a simple behaviour for custom adapters.</p>
         </div>
         <div class="feature-card">
           <div class="feature-icon feature-icon-teal">
@@ -144,8 +144,8 @@
             <pre><code class="language-elixir"># config/config.exs
 config :emissions,
   adapters: [
-    {MyApp.KafkaAdapter, topic: "my-events"},
-    {MyApp.WebSocketAdapter, endpoint: MyApp.Endpoint}
+    {Emissions.Phoenix.PubSubAdapter, pubsub: MyApp.PubSub},
+    {MyApp.KafkaAdapter, topic: "my-events"}
   ],
   handlers: [
     MyApp.SearchIndexHandler,
@@ -244,7 +244,7 @@ MyApp.Topics.topic_for_event(:order_created)
             <div class="arch-label">Kafka Adapter</div>
           </div>
           <div class="arch-node arch-adapter">
-            <div class="arch-label">WebSocket Adapter</div>
+            <div class="arch-label">Phoenix Channels</div>
           </div>
           <div class="arch-node arch-handler">
             <div class="arch-label">Handler Dispatcher</div>
@@ -369,6 +369,13 @@ MyApp.Topics.topic_for_event(:order_created)
           <h3>Plug Integration</h3>
           <p>Automatic buffer lifecycle management for Phoenix and Plug apps.</p>
         </a>
+        <a href="https://hexdocs.pm/emissions/phoenix-channels.html" class="guide-card" target="_blank" rel="noopener">
+          <div class="guide-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/><circle cx="19" cy="12" r="2"/><circle cx="5" cy="12" r="2"/></svg>
+          </div>
+          <h3>Phoenix Channels</h3>
+          <p>Real-time event delivery over WebSockets with built-in PubSub adapter.</p>
+        </a>
         <a href="https://hexdocs.pm/emissions/testing.html" class="guide-card" target="_blank" rel="noopener">
           <div class="guide-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
@@ -411,6 +418,7 @@ MyApp.Topics.topic_for_event(:order_created)
         <div class="footer-col">
           <h4>More</h4>
           <a href="https://hexdocs.pm/emissions/plug-integration.html" target="_blank" rel="noopener">Plug Integration</a>
+          <a href="https://hexdocs.pm/emissions/phoenix-channels.html" target="_blank" rel="noopener">Phoenix Channels</a>
           <a href="https://hexdocs.pm/emissions/topic-routing.html" target="_blank" rel="noopener">Topic Routing</a>
           <a href="https://hexdocs.pm/emissions/testing.html" target="_blank" rel="noopener">Testing</a>
           <a href="https://hexdocs.pm/emissions/telemetry.html" target="_blank" rel="noopener">Telemetry</a>
