@@ -71,11 +71,7 @@ defmodule Emissions.Pipeline.AdapterConsumer do
             event_count: length(filtered)
           })
 
-          Logger.error(
-            "Adapter #{inspect(adapter_mod)} failed: #{inspect(reason)}",
-            adapter: adapter_mod,
-            reason: reason
-          )
+          Logger.error("Adapter #{inspect(adapter_mod)} failed: #{inspect(reason)}")
 
           {:noreply, [], %{consumer | state: new_state}}
       end

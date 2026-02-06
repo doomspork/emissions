@@ -95,7 +95,7 @@ defmodule Emissions.Testing do
     quote bind_quoted: [event_name: event_name] do
       events = Emissions.Testing.events_named(event_name)
 
-      assert length(events) > 0,
+      assert events != [],
              "Expected event #{inspect(event_name)} to be emitted, but it was not"
 
       events
@@ -106,7 +106,7 @@ defmodule Emissions.Testing do
     quote bind_quoted: [event_name: event_name, fun: fun] do
       events = Emissions.Testing.events_named(event_name)
 
-      assert length(events) > 0,
+      assert events != [],
              "Expected event #{inspect(event_name)} to be emitted, but it was not"
 
       for event <- events, do: fun.(event)
