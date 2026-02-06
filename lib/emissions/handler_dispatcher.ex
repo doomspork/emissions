@@ -42,7 +42,12 @@ defmodule Emissions.HandlerDispatcher do
   defp handler_matches?(handler, event_name) do
     handler.handles?(event_name)
   rescue
-    _ -> false
+    error ->
+      Logger.warning(
+        "Handler #{inspect(handler)} raised in handles?/1: #{Exception.message(error)}"
+      )
+
+      false
   end
 
   defp run_handler(handler, event) do
