@@ -19,10 +19,10 @@ defmodule Emissions.EventTest do
       assert event.metadata == %{}
     end
 
-    test "sets a monotonic timestamp" do
-      before = System.monotonic_time()
+    test "sets a system timestamp in microseconds" do
+      before = System.system_time(:microsecond)
       event = Event.new(:test, %{})
-      after_time = System.monotonic_time()
+      after_time = System.system_time(:microsecond)
 
       assert event.timestamp >= before
       assert event.timestamp <= after_time

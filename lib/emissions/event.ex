@@ -17,7 +17,7 @@ defmodule Emissions.Event do
   defstruct [:name, :payload, metadata: %{}, timestamp: nil]
 
   @doc """
-  Creates a new event with the current monotonic timestamp.
+  Creates a new event with the current system timestamp in microseconds.
   """
   @spec new(atom(), term(), map()) :: t()
   def new(name, payload, metadata \\ %{}) do
@@ -25,7 +25,7 @@ defmodule Emissions.Event do
       name: name,
       payload: payload,
       metadata: metadata,
-      timestamp: System.monotonic_time()
+      timestamp: System.system_time(:microsecond)
     }
   end
 end

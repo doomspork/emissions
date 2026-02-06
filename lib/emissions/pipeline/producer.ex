@@ -28,24 +28,16 @@ defmodule Emissions.Pipeline.Producer do
 
   @impl GenStage
   def init(_opts) do
-    {:producer, :queue.new(), dispatcher: GenStage.BroadcastDispatcher}
+    {:producer, [], dispatcher: GenStage.BroadcastDispatcher}
   end
 
   @impl GenStage
-  def handle_cast({:events, events}, queue) do
-    queue = Enum.reduce(events, queue, fn event, q -> :queue.in(event, q) end)
-    {events_to_send, remaining} = take_from_queue(queue, :infinity)
-    {:noreply, events_to_send, remaining}
+  def handle_cast({:events, events}, _state) do
+    {:noreply, events, []}
   end
 
   @impl GenStage
-  def handle_demand(_demand, queue) do
-    {events, remaining} = take_from_queue(queue, :infinity)
-    {:noreply, events, remaining}
-  end
-
-  defp take_from_queue(queue, :infinity) do
-    events = :queue.to_list(queue)
-    {events, :queue.new()}
+  def handle_demand(_demand, state) do
+    {:noreply, [], state}
   end
 end
