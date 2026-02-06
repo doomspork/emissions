@@ -6,7 +6,7 @@
   Event emission library for Elixir with pluggable adapters, per-request buffering, and a GenStage-powered delivery pipeline.
 </p>
 
-Emissions provides a structured way to emit events to multiple destinations (Kafka, WebSockets, webhooks, etc.) with backpressure, internal event handling, and transactional buffer semantics.
+Emissions provides a structured way to emit events to multiple destinations (Kafka, WebSockets, webhooks, etc.) with backpressure, internal event handling, and transactional buffer semantics. Its design is drawn from production event systems built at Stord and Hiive.
 
 ## Features
 
@@ -17,6 +17,10 @@ Emissions provides a structured way to emit events to multiple destinations (Kaf
 - **Topic routing** — Optional compile-time event-to-topic mapping
 - **Telemetry** — Comprehensive instrumentation for monitoring and observability
 - **Test helpers** — Capture and assert on emitted events in tests
+
+## Background
+
+Emissions extracts the event emission patterns we built and refined across high-scale Elixir systems at [Stord](https://stord.com) (supply-chain orchestration) and [Hiive](https://hiive.com) (private-market exchange). The buffer-commit lifecycle, GenStage fan-out, and adapter model were shaped by real-world needs: transactional safety, multi-destination delivery, and back-pressure under sustained load.
 
 ## Installation
 
