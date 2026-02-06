@@ -14,7 +14,7 @@ defmodule Emissions.Telemetry do
 
   - `[:emissions, :buffer, :terminated]` — A buffer was terminated without committing.
     - Measurements: `%{count: 1}`
-    - Metadata: `%{}`
+    - Metadata: `%{event_count: non_neg_integer()}`
 
   ## Event Events
 

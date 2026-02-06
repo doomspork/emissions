@@ -62,11 +62,13 @@ defmodule Emissions.Buffer do
   @doc false
   @spec commit() :: :ok | {:error, :not_started}
   def commit do
-    with pid when is_pid(pid) <- Process.delete(@process_key),
-         true <- Process.unlink(pid) do
-      GenServer.call(pid, :commit)
-    else
-      nil -> {:error, :not_started}
+    case Process.delete(@process_key) do
+      pid when is_pid(pid) ->
+        Process.unlink(pid)
+        GenServer.call(pid, :commit)
+
+      nil ->
+        {:error, :not_started}
     end
   end
 

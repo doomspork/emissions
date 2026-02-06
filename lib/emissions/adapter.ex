@@ -34,7 +34,7 @@ defmodule Emissions.Adapter do
 
   Returns `{:ok, state}` where `state` is passed to subsequent callbacks.
   """
-  @callback init(opts :: keyword()) :: {:ok, state :: term()}
+  @callback init(opts :: keyword()) :: {:ok, state :: term()} | {:error, reason :: term()}
 
   @doc """
   Receives a batch of committed events for delivery.
