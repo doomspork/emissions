@@ -1,6 +1,10 @@
-# Emissions
+<p align="center">
+  <img src="site/assets/images/logo.png" alt="Emissions" width="200">
+</p>
 
-Event emission library for Elixir with pluggable adapters, per-request buffering, and a GenStage-powered delivery pipeline.
+<p align="center">
+  Event emission library for Elixir with pluggable adapters, per-request buffering, and a GenStage-powered delivery pipeline.
+</p>
 
 Emissions provides a structured way to emit events to multiple destinations (Kafka, WebSockets, webhooks, etc.) with backpressure, internal event handling, and transactional buffer semantics.
 
