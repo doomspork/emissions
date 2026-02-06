@@ -83,12 +83,28 @@ Each adapter gets its own GenStage consumer with independent backpressure. A slo
 
 ## Adapter Lifecycle
 
-1. Application starts — `Emissions.Pipeline.AdapterSupervisor` creates one `AdapterConsumer` per configured adapter
-2. Each `AdapterConsumer` calls `adapter.init(opts)` to initialize state
-3. Events arrive via the GenStage pipeline in batches
-4. If `interested?/2` is implemented, events are filtered before delivery
-5. `handle_events/2` is called with the batch
-6. On crash, the supervisor restarts the consumer and calls `init/1` again
+```mermaid
+graph TD
+    A["Application Starts"] --> B["AdapterSupervisor creates<br/>AdapterConsumer"]
+    B --> C["adapter.init(opts)"]
+    C --> D["Subscribe to Producer"]
+    D --> E{"Events arrive<br/>in batch"}
+    E --> F{"interested?/2<br/>implemented?"}
+    F -->|Yes| G["Filter events"]
+    F -->|No| H["All events pass"]
+    G --> I["handle_events/2"]
+    H --> I
+    I -->|"{:ok, state}"| J["Telemetry: success"]
+    I -->|"{:error, reason, state}"| K["Telemetry: error<br/>Log warning"]
+    I -->|"Exception raised"| L["Consumer crashes"]
+    J --> E
+    K --> E
+    L --> B
+
+    style A fill:#6366f1,color:#fff
+    style I fill:#4a9eff,color:#fff
+    style L fill:#ef4444,color:#fff
+```
 
 ## Error Handling
 

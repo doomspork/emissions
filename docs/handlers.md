@@ -71,6 +71,20 @@ end
 
 When `handle_event/3` returns `:ok`, the handler's buffer is committed and the cascading events flow through the pipeline to all adapters and other handlers.
 
+```mermaid
+graph LR
+    A[":order_created"] -->|Pipeline| H["FulfillmentHandler"]
+    H -->|"emit()"| B[Handler's Buffer]
+    B -->|"commit()"| P[Pipeline Producer]
+    P --> C1["Kafka Adapter"]
+    P --> C2["WebSocket Adapter"]
+    P --> C3["Other Handlers"]
+
+    style A fill:#6366f1,color:#fff
+    style P fill:#4a9eff,color:#fff
+    style H fill:#f59e0b,color:#fff
+```
+
 ## Configuration
 
 Register handlers in your application config:
@@ -85,6 +99,34 @@ config :emissions,
 ```
 
 ## Execution Model
+
+```mermaid
+sequenceDiagram
+    participant P as Pipeline
+    participant D as HandlerDispatcher
+    participant T as TaskSupervisor
+    participant H as Handler Task
+
+    P->>D: handle_events([event])
+    D->>D: Filter handlers by handles?/1
+    loop Each matching handler
+        D->>T: start_child(fn)
+        T->>H: spawn task
+        activate H
+        H->>H: Emissions.start()
+        H->>H: handler.handle_event/3
+        alt returns :ok
+            H->>H: Emissions.commit()
+            Note over H: Cascading events<br/>enter pipeline
+        else returns :ignored
+            H->>H: Emissions.terminate()
+        else returns {:error, reason}
+            H->>H: Emissions.terminate()
+            H->>H: Log error
+        end
+        deactivate H
+    end
+```
 
 Handlers run inside a `Task.Supervisor` task, which provides:
 

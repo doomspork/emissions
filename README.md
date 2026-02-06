@@ -185,10 +185,17 @@ end
 
 ## Buffer Lifecycle
 
-```
-start() → emit() → emit() → ... → commit()     # deliver and terminate
-                                  → flush()      # deliver, keep buffer open
-                                  → terminate()  # discard, cleanup
+```mermaid
+stateDiagram-v2
+    [*] --> Idle
+    Idle --> Buffering: start()
+    Buffering --> Buffering: emit()
+    Buffering --> Delivered: commit()
+    Buffering --> Delivered: flush()
+    Buffering --> Discarded: terminate()
+    Delivered --> Buffering: emit() [after flush]
+    Delivered --> [*]: [after commit]
+    Discarded --> [*]
 ```
 
 - `start/0` — Creates a per-request buffer linked to the calling process
@@ -199,18 +206,20 @@ start() → emit() → emit() → ... → commit()     # deliver and terminate
 
 ## Architecture
 
-```
-Application Code
-    │
-    ▼
-Emissions.Buffer (GenServer)          Per-request, process-linked
-    │
-    ▼
-Pipeline.Producer (GenStage)          BroadcastDispatcher for fan-out
-    │
-    ├──► AdapterConsumer (Kafka)      Independent backpressure
-    ├──► AdapterConsumer (WebSocket)  Independent backpressure
-    └──► AdapterConsumer (Handlers)   Dispatches to internal handlers
+```mermaid
+graph TD
+    App["Application Code"] -->|"emit()"| Buf["Emissions.Buffer<br/><i>GenServer, per-request</i>"]
+    Buf -->|"commit()"| Pro["Pipeline.Producer<br/><i>GenStage, BroadcastDispatcher</i>"]
+    Pro --> C1["AdapterConsumer<br/>Kafka"]
+    Pro --> C2["AdapterConsumer<br/>WebSocket"]
+    Pro --> C3["AdapterConsumer<br/>HandlerDispatcher"]
+    C3 --> H1["Handler Task"]
+    C3 --> H2["Handler Task"]
+
+    style Pro fill:#4a9eff,color:#fff
+    style C1 fill:#34d399,color:#fff
+    style C2 fill:#34d399,color:#fff
+    style C3 fill:#f59e0b,color:#fff
 ```
 
 ## Configuration

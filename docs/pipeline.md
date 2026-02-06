@@ -4,16 +4,22 @@ Emissions uses a GenStage pipeline to fan out committed events to all configured
 
 ## Architecture
 
-```
-Emissions.Buffer (GenServer)
-    │ commit/0 calls Producer.notify/1
-    ▼
-Emissions.Pipeline.Producer (GenStage :producer)
-    │ BroadcastDispatcher
-    ├──► AdapterConsumer wrapping KafkaAdapter
-    ├──► AdapterConsumer wrapping WebSocketAdapter
-    ├──► AdapterConsumer wrapping WebhookAdapter
-    └──► AdapterConsumer wrapping HandlerDispatcher
+```mermaid
+graph TD
+    B[Emissions.Buffer] -->|"commit → notify(events)"| P[Pipeline.Producer]
+    P -->|BroadcastDispatcher| C1[AdapterConsumer: Kafka]
+    P -->|BroadcastDispatcher| C2[AdapterConsumer: WebSocket]
+    P -->|BroadcastDispatcher| C3[AdapterConsumer: Webhook]
+    P -->|BroadcastDispatcher| C4[AdapterConsumer: HandlerDispatcher]
+    C4 --> H1[Handler Task 1]
+    C4 --> H2[Handler Task 2]
+    C4 --> H3[Handler Task N]
+
+    style P fill:#4a9eff,color:#fff
+    style C1 fill:#34d399,color:#fff
+    style C2 fill:#34d399,color:#fff
+    style C3 fill:#34d399,color:#fff
+    style C4 fill:#f59e0b,color:#fff
 ```
 
 ## Producer
@@ -34,6 +40,24 @@ Each configured adapter is wrapped in an `Emissions.Pipeline.AdapterConsumer` �
 
 ## Backpressure
 
+```mermaid
+sequenceDiagram
+    participant P as Producer
+    participant Fast as Fast Consumer (WebSocket)
+    participant Slow as Slow Consumer (Kafka)
+
+    Fast->>P: demand(50)
+    Slow->>P: demand(10)
+    Note over P: Receives committed events
+    P->>Fast: 50 events
+    P->>Slow: 10 events
+    Fast->>P: demand(50)
+    Note over Slow: Still processing...
+    P->>Fast: 50 events
+    Slow->>P: demand(10)
+    P->>Slow: 10 events
+```
+
 GenStage's demand-driven flow means each consumer independently controls how fast it receives events:
 
 - A fast WebSocket adapter can process events immediately
@@ -43,15 +67,27 @@ GenStage's demand-driven flow means each consumer independently controls how fas
 
 ## Supervision
 
-```
-Emissions.Supervisor (rest_for_one)
-├── Emissions.BufferPool (DynamicSupervisor)
-├── Emissions.Pipeline.Producer (GenStage)
-├── Emissions.Pipeline.AdapterSupervisor (one_for_one)
-│   ├── AdapterConsumer (adapter 1)
-│   ├── AdapterConsumer (adapter 2)
-│   └── AdapterConsumer (handler dispatcher)
-└── Emissions.TaskSupervisor (Task.Supervisor)
+```mermaid
+graph TD
+    S["Emissions.Supervisor<br/><i>rest_for_one</i>"]
+    S --> BP["Emissions.BufferPool<br/><i>DynamicSupervisor</i>"]
+    S --> PR["Pipeline.Producer<br/><i>GenStage</i>"]
+    S --> AS["Pipeline.AdapterSupervisor<br/><i>one_for_one</i>"]
+    S --> TS["Emissions.TaskSupervisor<br/><i>Task.Supervisor</i>"]
+
+    BP -.->|dynamic| B1["Buffer 1"]
+    BP -.->|dynamic| B2["Buffer 2"]
+    BP -.->|dynamic| BN["Buffer N"]
+
+    AS --> AC1["AdapterConsumer<br/>Adapter 1"]
+    AS --> AC2["AdapterConsumer<br/>Adapter 2"]
+    AS --> AH["AdapterConsumer<br/>HandlerDispatcher"]
+
+    style S fill:#6366f1,color:#fff
+    style BP fill:#4a9eff,color:#fff
+    style PR fill:#4a9eff,color:#fff
+    style AS fill:#4a9eff,color:#fff
+    style TS fill:#4a9eff,color:#fff
 ```
 
 The top-level supervisor uses `rest_for_one` strategy. If the producer crashes, all adapter consumers are restarted (since they subscribe to the producer). The `AdapterSupervisor` uses `one_for_one` so a single adapter crash doesn't affect others.
