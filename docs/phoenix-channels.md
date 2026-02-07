@@ -177,7 +177,7 @@ defmodule MyAppWeb.EmissionsChannel do
   def join("emissions:" <> rest = topic, params, socket) do
     tenant_id = socket.assigns[:tenant_id]
 
-    if String.starts_with?(rest, tenant_id) do
+    if rest == tenant_id or String.starts_with?(rest, tenant_id <> ":") do
       super(topic, params, socket)
     else
       {:error, %{reason: "unauthorized"}}
