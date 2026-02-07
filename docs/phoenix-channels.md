@@ -107,6 +107,85 @@ An `:order_created` event would then be broadcast to `"emissions:orders"`, `"emi
 
 Without a TopicRouter, events are only broadcast to the event-name and catch-all topics.
 
+## Multi-Tenant Scoping
+
+For multi-tenant applications, configure the `:scope` option to insert a tenant identifier into all topic strings. This ensures events are broadcast only to channels subscribed to that specific tenant.
+
+### Configuration
+
+Use an atom to extract the scope from event metadata:
+
+```elixir
+config :emissions,
+  adapters: [
+    {Emissions.Phoenix.PubSubAdapter,
+     pubsub: MyApp.PubSub,
+     scope: :org_id}
+  ]
+```
+
+Or use a function for custom logic:
+
+```elixir
+config :emissions,
+  adapters: [
+    {Emissions.Phoenix.PubSubAdapter,
+     pubsub: MyApp.PubSub,
+     scope: fn event -> event.metadata[:org_id] end}
+  ]
+```
+
+### Scoped Topic Structure
+
+When scope resolves to a non-nil value (e.g., `"acme"`), all topics include the scope segment:
+
+| Level | Topic Example | Receives |
+|---|---|---|
+| Scoped catch-all | `"emissions:acme"` | All events for tenant "acme" |
+| Scoped topic group | `"emissions:acme:orders"` | Order events for tenant "acme" (with TopicRouter) |
+| Scoped event name | `"emissions:acme:order_created"` | `order_created` events for tenant "acme" |
+
+When scope resolves to `nil` (e.g., metadata key is missing), topics fall back to the unscoped format.
+
+### Usage
+
+Emit events with tenant metadata:
+
+```elixir
+Emissions.emit(:order_created, %{id: 123}, %{org_id: "acme"})
+Emissions.commit()
+```
+
+Subscribe clients to tenant-specific channels:
+
+```javascript
+const channel = socket.channel("emissions:acme:orders", {});
+channel.join();
+channel.on("event", (payload) => {
+  console.log("Acme order event:", payload);
+});
+```
+
+### Channel Authorization
+
+Combine scoping with channel authorization to enforce tenant boundaries:
+
+```elixir
+defmodule MyAppWeb.EmissionsChannel do
+  use Emissions.Phoenix.Channel
+
+  def join("emissions:" <> rest = topic, params, socket) do
+    tenant_id = socket.assigns[:tenant_id]
+
+    if rest == tenant_id or String.starts_with?(rest, tenant_id <> ":") do
+      super(topic, params, socket)
+    else
+      {:error, %{reason: "unauthorized"}}
+    end
+  end
+end
+```
+
 ## Custom Serialization
 
 The default serializer converts events into maps with `name`, `payload`, `metadata`, and `timestamp` keys. Implement the `Emissions.Phoenix.Serializer` behaviour for a custom wire format:
@@ -166,6 +245,7 @@ The generated `join/3` is `defoverridable`, so `super/3` delegates to the defaul
 | `:pubsub` | (required) | The `Phoenix.PubSub` server name |
 | `:topic_prefix` | `"emissions"` | Prefix for all topic strings |
 | `:topic_router` | `nil` | Module using `Emissions.TopicRouter` |
+| `:scope` | `nil` | Atom (metadata key) or 1-arity function to resolve tenant scope |
 | `:serializer` | `DefaultSerializer` | Module implementing `Emissions.Phoenix.Serializer` |
 
 ## JavaScript Client
