@@ -43,6 +43,7 @@
       <nav class="guide-sidebar-nav">
         <a href="adapters.html" class="guide-sidebar-link">Adapters</a>
         <a href="phoenix-channels.html" class="guide-sidebar-link guide-sidebar-sublink active">Phoenix Channels</a>
+        <a href="serialization.html" class="guide-sidebar-link guide-sidebar-sublink">Serialization</a>
         <a href="handlers.html" class="guide-sidebar-link">Handlers</a>
         <a href="buffering.html" class="guide-sidebar-link">Buffering</a>
         <a href="pipeline.html" class="guide-sidebar-link">Pipeline</a>
@@ -185,7 +186,11 @@ end</code></pre>
 
         <h2>Custom Serialization</h2>
 
-        <p>The default serializer converts events into maps with <code>name</code>, <code>payload</code>, <code>metadata</code>, and <code>timestamp</code> keys. Implement the <code>Emissions.Phoenix.Serializer</code> behaviour for a custom wire format:</p>
+        <p>The default serializer converts events into maps with <code>name</code>, <code>payload</code>, <code>metadata</code>, and <code>timestamp</code> keys. The PubSubAdapter accepts any module implementing <code>Emissions.Serializer</code> (or the narrower <code>Emissions.Phoenix.Serializer</code> which constrains the return type to <code>map()</code>).</p>
+
+        <p>For non-Phoenix serialization (binary formats, custom encodings), see the <a href="serialization.html">Serialization guide</a>.</p>
+
+        <p>Implement a custom serializer for a different wire format:</p>
 
 <pre><code class="language-elixir">defmodule MyApp.EmissionsSerializer do
   @behaviour Emissions.Phoenix.Serializer
@@ -258,7 +263,7 @@ end</code></pre>
             <tr>
               <td><code>:serializer</code></td>
               <td><code>DefaultSerializer</code></td>
-              <td>Module implementing <code>Emissions.Phoenix.Serializer</code></td>
+              <td>Module implementing <code>Emissions.Serializer</code> (or <code>Emissions.Phoenix.Serializer</code>)</td>
             </tr>
           </tbody>
         </table>
@@ -344,6 +349,7 @@ end</code></pre>
           <h4>Guides</h4>
           <a href="adapters.html">Adapters</a>
           <a href="phoenix-channels.html">Phoenix Channels</a>
+          <a href="serialization.html">Serialization</a>
           <a href="handlers.html">Handlers</a>
           <a href="buffering.html">Buffering</a>
         </div>

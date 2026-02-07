@@ -27,6 +27,35 @@ defmodule Emissions.Adapter do
           {:ok, state}
         end
       end
+
+  ## Serialization
+
+  Adapters that need to transform events before delivery can accept a
+  `:serializer` option in `init/1` and call it in `handle_events/2`. When no
+  serializer is configured, default to `Emissions.Serializer.Default` which
+  produces JSON-friendly maps.
+
+  See `Emissions.Serializer` for the behaviour definition and examples.
+
+      defmodule MyApp.KafkaAdapter do
+        @behaviour Emissions.Adapter
+
+        @impl true
+        def init(opts) do
+          serializer = Keyword.get(opts, :serializer, Emissions.Serializer.Default)
+          {:ok, %{producer: Keyword.fetch!(opts, :producer), serializer: serializer}}
+        end
+
+        @impl true
+        def handle_events(events, state) do
+          for event <- events do
+            payload = state.serializer.serialize(event)
+            MyKafka.produce(state.producer, payload)
+          end
+
+          {:ok, state}
+        end
+      end
   """
 
   @doc """

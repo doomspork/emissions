@@ -1,13 +1,13 @@
 if Code.ensure_loaded?(Phoenix.PubSub) do
   defmodule Emissions.Phoenix.Serializer do
     @moduledoc """
-    Behaviour for serializing `Emissions.Event` structs into maps suitable
-    for transmission over Phoenix Channels.
+    Specialization of `Emissions.Serializer` for Phoenix Channels.
 
-    The default implementation (`Emissions.Phoenix.DefaultSerializer`) converts
-    events into JSON-friendly maps. Implement this behaviour to customize the
-    wire format — for example, to filter sensitive fields, rename keys, or
-    conform to a specific schema.
+    This behaviour narrows the return type to `map()` since Phoenix PubSub
+    broadcasting requires map payloads for JSON serialization over WebSockets.
+
+    For adapters that need binary, string, or other output formats, use
+    `Emissions.Serializer` directly.
 
     ## Example
 
@@ -39,21 +39,15 @@ if Code.ensure_loaded?(Phoenix.PubSub) do
 
   defmodule Emissions.Phoenix.DefaultSerializer do
     @moduledoc """
-    Default serializer that converts `Emissions.Event` structs into JSON-friendly maps.
+    Default serializer for Phoenix Channels.
 
-    Produces maps with the keys `name`, `payload`, `metadata`, and `timestamp`.
+    Delegates to `Emissions.Serializer.Default` which produces JSON-friendly maps
+    with `name`, `payload`, `metadata`, and `timestamp` keys.
     """
 
     @behaviour Emissions.Phoenix.Serializer
 
     @impl true
-    def serialize(%Emissions.Event{} = event) do
-      %{
-        name: event.name,
-        payload: event.payload,
-        metadata: event.metadata,
-        timestamp: event.timestamp
-      }
-    end
+    defdelegate serialize(event), to: Emissions.Serializer.Default
   end
 end

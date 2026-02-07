@@ -188,7 +188,11 @@ end
 
 ## Custom Serialization
 
-The default serializer converts events into maps with `name`, `payload`, `metadata`, and `timestamp` keys. Implement the `Emissions.Phoenix.Serializer` behaviour for a custom wire format:
+The default serializer converts events into maps with `name`, `payload`, `metadata`, and `timestamp` keys. The PubSubAdapter accepts any module implementing `Emissions.Serializer` (or the narrower `Emissions.Phoenix.Serializer` which constrains the return type to `map()`).
+
+For non-Phoenix serialization (binary formats, custom encodings), see the [Serialization guide](serialization.md).
+
+Implement a custom serializer for a different wire format:
 
 ```elixir
 defmodule MyApp.EmissionsSerializer do

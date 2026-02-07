@@ -66,6 +66,35 @@ end
 
 When `interested?/2` is not implemented, the adapter receives all events.
 
+## Serialization
+
+Adapters can use the `Emissions.Serializer` behaviour to transform events before delivery. Accept a `:serializer` option in `init/1` and default to `Emissions.Serializer.Default` when none is configured:
+
+```elixir
+defmodule MyApp.WebhookAdapter do
+  @behaviour Emissions.Adapter
+
+  @impl true
+  def init(opts) do
+    url = Keyword.fetch!(opts, :url)
+    serializer = Keyword.get(opts, :serializer, Emissions.Serializer.Default)
+    {:ok, %{url: url, serializer: serializer}}
+  end
+
+  @impl true
+  def handle_events(events, state) do
+    payload = Enum.map(events, &state.serializer.serialize/1)
+
+    case HTTPClient.post(state.url, Jason.encode!(payload)) do
+      {:ok, _response} -> {:ok, state}
+      {:error, reason} -> {:error, reason, state}
+    end
+  end
+end
+```
+
+The default serializer produces JSON-friendly maps with no configuration required. Custom serializers can return maps, binaries (Avro, Protobuf), or any other format. See the [Serialization guide](serialization.md) for details.
+
 ## Configuration
 
 Register adapters as `{module, opts}` tuples in your application config:
