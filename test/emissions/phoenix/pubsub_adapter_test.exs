@@ -52,6 +52,11 @@ defmodule Emissions.Phoenix.PubSubAdapterTest do
     test "returns error when :pubsub is missing" do
       assert {:error, ":pubsub option is required"} = PubSubAdapter.init([])
     end
+
+    test "returns error when :scope is not an atom or function", %{pubsub: pubsub} do
+      assert {:error, ":scope must be an atom or a 1-arity function"} =
+               PubSubAdapter.init(pubsub: pubsub, scope: "tenant_123")
+    end
   end
 
   describe "handle_events/2" do

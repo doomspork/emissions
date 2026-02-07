@@ -68,17 +68,22 @@ if Code.ensure_loaded?(Phoenix.PubSub) do
 
     @impl true
     def init(opts) do
+      scope = Keyword.get(opts, :scope)
+
       case Keyword.fetch(opts, :pubsub) do
-        {:ok, pubsub} ->
+        {:ok, pubsub} when is_nil(scope) or is_atom(scope) or is_function(scope, 1) ->
           state = %{
             pubsub: pubsub,
             topic_prefix: Keyword.get(opts, :topic_prefix, "emissions"),
-            scope: Keyword.get(opts, :scope),
+            scope: scope,
             topic_router: Keyword.get(opts, :topic_router),
             serializer: Keyword.get(opts, :serializer, Emissions.Phoenix.DefaultSerializer)
           }
 
           {:ok, state}
+
+        {:ok, _pubsub} ->
+          {:error, ":scope must be an atom or a 1-arity function"}
 
         :error ->
           {:error, ":pubsub option is required"}
