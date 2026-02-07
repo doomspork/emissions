@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pipeline - Emissions Guide</title>
+  <meta name="description" content="GenStage pipeline architecture with fan-out and independent backpressure in Emissions for Elixir.">
+
+  <link rel="icon" type="image/png" href="../assets/images/logo.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Inter:wght@400;500;600&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body class="guide-page">
+
+  <nav class="nav">
+    <div class="container nav-inner">
+      <a href="../index.html" class="nav-brand">
+        <img src="../assets/images/logo.png" alt="Emissions" class="nav-logo">
+        <span>Emissions</span>
+      </a>
+      <div class="nav-links">
+        <a href="../index.html#features">Features</a>
+        <a href="../index.html#quickstart">Quick Start</a>
+        <a href="../index.html#architecture">Architecture</a>
+        <a href="../index.html#guides">Guides</a>
+        <a href="https://github.com/doomspork/emissions" class="btn btn-sm btn-outline" target="_blank" rel="noopener">
+          <svg class="icon" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+          GitHub
+        </a>
+      </div>
+      <button class="nav-toggle" aria-label="Toggle navigation">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+
+  <div class="guide-layout">
+    <aside class="guide-sidebar">
+      <div class="guide-sidebar-title">Guides</div>
+      <nav class="guide-sidebar-nav">
+        <a href="adapters.html" class="guide-sidebar-link">Adapters</a>
+        <a href="phoenix-channels.html" class="guide-sidebar-link guide-sidebar-sublink">Phoenix Channels</a>
+        <a href="handlers.html" class="guide-sidebar-link">Handlers</a>
+        <a href="buffering.html" class="guide-sidebar-link">Buffering</a>
+        <a href="pipeline.html" class="guide-sidebar-link active">Pipeline</a>
+        <a href="topic-routing.html" class="guide-sidebar-link">Topic Routing</a>
+        <a href="plug-integration.html" class="guide-sidebar-link">Plug Integration</a>
+        <a href="testing.html" class="guide-sidebar-link">Testing</a>
+        <a href="telemetry.html" class="guide-sidebar-link">Telemetry</a>
+      </nav>
+    </aside>
+
+    <main class="guide-content">
+      <div class="guide-breadcrumb">
+        <a href="../index.html">Home</a>
+        <span class="guide-breadcrumb-sep">/</span>
+        <a href="../index.html#guides">Guides</a>
+        <span class="guide-breadcrumb-sep">/</span>
+        Pipeline
+      </div>
+
+      <article class="guide-article">
+        <h1>GenStage Pipeline</h1>
+
+        <p>Emissions uses a GenStage pipeline to fan out committed events to all configured adapters with independent backpressure per consumer.</p>
+
+        <h2>Architecture</h2>
+
+        <div class="mermaid">
+graph TD
+    B[Emissions.Buffer] -->|"commit → notify(events)"| P[Pipeline.Producer]
+    P -->|BroadcastDispatcher| C1[AdapterConsumer: Kafka]
+    P -->|BroadcastDispatcher| C2[AdapterConsumer: WebSocket]
+    P -->|BroadcastDispatcher| C3[AdapterConsumer: Webhook]
+    P -->|BroadcastDispatcher| C4[AdapterConsumer: HandlerDispatcher]
+    C4 --> H1[Handler Task 1]
+    C4 --> H2[Handler Task 2]
+    C4 --> H3[Handler Task N]
+
+    style P fill:#4a9eff,color:#fff
+    style C1 fill:#34d399,color:#fff
+    style C2 fill:#34d399,color:#fff
+    style C3 fill:#34d399,color:#fff
+    style C4 fill:#f59e0b,color:#fff
+        </div>
+
+        <h2>Producer</h2>
+
+        <p><code>Emissions.Pipeline.Producer</code> is a named GenStage producer that uses <code>GenStage.BroadcastDispatcher</code>. This dispatcher sends every event to every subscribed consumer, enabling true fan-out.</p>
+
+        <p>When a buffer commits, it calls <code>Producer.notify/1</code> which pushes events into the producer via <code>GenStage.cast</code>. The producer drains its internal queue in response to demand from consumers.</p>
+
+        <h2>Adapter Consumers</h2>
+
+        <p>Each configured adapter is wrapped in an <code>Emissions.Pipeline.AdapterConsumer</code> &mdash; a GenStage consumer that subscribes to the producer. Each consumer:</p>
+
+        <ol>
+          <li>Calls the adapter's <code>init/1</code> on startup</li>
+          <li>Subscribes to the producer with configurable <code>max_demand</code></li>
+          <li>Optionally filters events via <code>interested?/2</code></li>
+          <li>Delegates to <code>handle_events/2</code> for delivery</li>
+          <li>Reports success/failure via telemetry</li>
+        </ol>
+
+        <h2>Backpressure</h2>
+
+        <div class="mermaid">
+sequenceDiagram
+    participant P as Producer
+    participant Fast as Fast Consumer (WebSocket)
+    participant Slow as Slow Consumer (Kafka)
+
+    Fast->>P: demand(50)
+    Slow->>P: demand(10)
+    Note over P: Receives committed events
+    P->>Fast: 50 events
+    P->>Slow: 10 events
+    Fast->>P: demand(50)
+    Note over Slow: Still processing...
+    P->>Fast: 50 events
+    Slow->>P: demand(10)
+    P->>Slow: 10 events
+        </div>
+
+        <p>GenStage's demand-driven flow means each consumer independently controls how fast it receives events:</p>
+
+        <ul>
+          <li>A fast WebSocket adapter can process events immediately</li>
+          <li>A slow Kafka adapter under load naturally applies backpressure</li>
+          <li>The slow adapter does not block the fast one &mdash; each manages its own demand</li>
+          <li>If all consumers are slow, the producer buffers events internally</li>
+        </ul>
+
+        <h2>Supervision</h2>
+
+        <div class="mermaid">
+graph TD
+    S["Emissions.Supervisor<br/><i>rest_for_one</i>"]
+    S --> BP["Emissions.BufferPool<br/><i>DynamicSupervisor</i>"]
+    S --> PR["Pipeline.Producer<br/><i>GenStage</i>"]
+    S --> AS["Pipeline.AdapterSupervisor<br/><i>one_for_one</i>"]
+    S --> TS["Emissions.TaskSupervisor<br/><i>Task.Supervisor</i>"]
+
+    BP -.->|dynamic| B1["Buffer 1"]
+    BP -.->|dynamic| B2["Buffer 2"]
+    BP -.->|dynamic| BN["Buffer N"]
+
+    AS --> AC1["AdapterConsumer<br/>Adapter 1"]
+    AS --> AC2["AdapterConsumer<br/>Adapter 2"]
+    AS --> AH["AdapterConsumer<br/>HandlerDispatcher"]
+
+    style S fill:#6366f1,color:#fff
+    style BP fill:#4a9eff,color:#fff
+    style PR fill:#4a9eff,color:#fff
+    style AS fill:#4a9eff,color:#fff
+    style TS fill:#4a9eff,color:#fff
+        </div>
+
+        <p>The top-level supervisor uses <code>rest_for_one</code> strategy. If the producer crashes, all adapter consumers are restarted (since they subscribe to the producer). The <code>AdapterSupervisor</code> uses <code>one_for_one</code> so a single adapter crash doesn't affect others.</p>
+
+        <h2>Configuration</h2>
+
+        <p>Tune the pipeline via the <code>:pipeline</code> config key:</p>
+
+<pre><code class="language-elixir">config :emissions,
+  pipeline: [
+    max_demand: 50   # events per consumer per batch (default: 50)
+  ]</code></pre>
+
+        <p>Higher <code>max_demand</code> means larger batches to adapters (better throughput, higher latency). Lower values mean smaller batches (lower latency, more overhead).</p>
+
+        <h2>Handler Dispatcher</h2>
+
+        <p>The <code>Emissions.HandlerDispatcher</code> is a special adapter that dispatches events to internal handlers. It's automatically added to the pipeline when handlers are configured. It implements the same <code>Emissions.Adapter</code> behaviour, so it participates in the GenStage pipeline like any other adapter.</p>
+      </article>
+
+      <div class="guide-pager">
+        <a href="buffering.html" class="guide-pager-prev">
+          <span class="guide-pager-label">Previous</span>
+          <span class="guide-pager-title">&larr; Buffering</span>
+        </a>
+        <a href="topic-routing.html" class="guide-pager-next">
+          <span class="guide-pager-label">Next</span>
+          <span class="guide-pager-title">Topic Routing &rarr;</span>
+        </a>
+      </div>
+    </main>
+  </div>
+
+  <button class="guide-sidebar-toggle">Guides</button>
+
+  <footer class="footer">
+    <div class="container footer-inner">
+      <div class="footer-brand">
+        <img src="../assets/images/logo.png" alt="Emissions" class="footer-logo">
+        <p>Event emission for Elixir, made with love.</p>
+      </div>
+      <div class="footer-links">
+        <div class="footer-col">
+          <h4>Resources</h4>
+          <a href="https://hexdocs.pm/emissions" target="_blank" rel="noopener">HexDocs</a>
+          <a href="https://hex.pm/packages/emissions" target="_blank" rel="noopener">Hex.pm</a>
+          <a href="https://github.com/doomspork/emissions" target="_blank" rel="noopener">GitHub</a>
+        </div>
+        <div class="footer-col">
+          <h4>Guides</h4>
+          <a href="adapters.html">Adapters</a>
+          <a href="phoenix-channels.html">Phoenix Channels</a>
+          <a href="handlers.html">Handlers</a>
+          <a href="buffering.html">Buffering</a>
+        </div>
+        <div class="footer-col">
+          <h4>More</h4>
+          <a href="pipeline.html">Pipeline</a>
+          <a href="topic-routing.html">Topic Routing</a>
+          <a href="plug-integration.html">Plug Integration</a>
+          <a href="testing.html">Testing</a>
+          <a href="telemetry.html">Telemetry</a>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>MIT License &mdash; <a href="https://github.com/doomspork/emissions" target="_blank" rel="noopener">doomspork/emissions</a></p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-elixir.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script>
+    mermaid.initialize({ startOnLoad: true, theme: 'default', themeVariables: { primaryColor: '#ede9fe', primaryTextColor: '#1e1b4b', primaryBorderColor: '#7c3aed', lineColor: '#a78bfa', secondaryColor: '#fce7f3', tertiaryColor: '#f5f3ff' } });
+    document.querySelector('.nav-toggle').setAttribute('aria-expanded', 'false');
+    document.querySelector('.nav-toggle').setAttribute('aria-controls', 'nav-links');
+    document.querySelector('.nav-links').id = 'nav-links';
+    document.querySelector('.nav-toggle').addEventListener('click', function() { var isOpen = document.querySelector('.nav-links').classList.toggle('open'); this.classList.toggle('open'); this.setAttribute('aria-expanded', String(isOpen)); });
+    window.addEventListener('scroll', function() { var nav = document.querySelector('.nav'); if (window.scrollY > 50) { nav.classList.add('scrolled'); } else { nav.classList.remove('scrolled'); } });
+    var sidebarToggle = document.querySelector('.guide-sidebar-toggle'); if (sidebarToggle) { document.querySelector('.guide-sidebar').id = 'guide-sidebar'; sidebarToggle.setAttribute('aria-expanded', 'false'); sidebarToggle.setAttribute('aria-controls', 'guide-sidebar'); sidebarToggle.addEventListener('click', function() { var isOpen = document.querySelector('.guide-sidebar').classList.toggle('open'); this.setAttribute('aria-expanded', String(isOpen)); }); }
+  </script>
+</body>
+</html>
