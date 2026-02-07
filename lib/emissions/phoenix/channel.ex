@@ -23,6 +23,12 @@ if Code.ensure_loaded?(Phoenix.Channel) do
       * `"emissions:orders"` — receives events for the `orders` topic group
       * `"emissions:order_created"` — receives only `order_created` events
 
+    When the adapter is configured with `:scope`, topics include a tenant segment:
+
+      * `"emissions:acme"` — all events for tenant "acme"
+      * `"emissions:acme:orders"` — order events for tenant "acme"
+      * `"emissions:acme:order_created"` — specific event for tenant "acme"
+
     ## Options
 
       * `:topic_prefix` — must match the prefix configured on the
