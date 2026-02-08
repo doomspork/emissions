@@ -60,8 +60,9 @@ if Code.ensure_loaded?(Phoenix.PubSub) do
         scope segment.
       * `:topic_router` — a module that uses `Emissions.TopicRouter`. When set,
         events are also broadcast to their mapped topic group.
-      * `:serializer` — a module implementing `Emissions.Phoenix.Serializer`.
-        Defaults to `Emissions.Phoenix.DefaultSerializer`.
+      * `:serializer` — a module implementing `Emissions.Serializer` (or the
+        narrower `Emissions.Phoenix.Serializer` for map-only output). Defaults
+        to `Emissions.Phoenix.DefaultSerializer`.
     """
 
     @behaviour Emissions.Adapter

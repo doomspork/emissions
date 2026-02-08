@@ -20,6 +20,15 @@ defmodule Emissions.Phoenix.PubSubAdapterTest do
     end
   end
 
+  defmodule CoreSerializer do
+    @behaviour Emissions.Serializer
+
+    @impl true
+    def serialize(event) do
+      %{event_type: event.name, event_data: event.payload}
+    end
+  end
+
   setup do
     pubsub = :"test_pubsub_#{System.unique_integer([:positive])}"
     start_supervised!({Phoenix.PubSub, name: pubsub})
@@ -145,6 +154,17 @@ defmodule Emissions.Phoenix.PubSubAdapterTest do
 
       assert_receive {:emissions_event, %{name: :order_created}}
       assert_receive {:emissions_event, %{name: :user_created}}
+    end
+
+    test "accepts a top-level Emissions.Serializer implementation", %{pubsub: pubsub} do
+      {:ok, state} = PubSubAdapter.init(pubsub: pubsub, serializer: CoreSerializer)
+      Phoenix.PubSub.subscribe(pubsub, "emissions:order_created")
+
+      event = Emissions.Event.new(:order_created, %{id: 1})
+      assert {:ok, _state} = PubSubAdapter.handle_events([event], state)
+
+      assert_receive {:emissions_event, payload}
+      assert payload == %{event_type: :order_created, event_data: %{id: 1}}
     end
 
     test "includes metadata and timestamp in default serialization", %{pubsub: pubsub} do

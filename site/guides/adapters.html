@@ -43,6 +43,7 @@
       <nav class="guide-sidebar-nav">
         <a href="adapters.html" class="guide-sidebar-link active">Adapters</a>
         <a href="phoenix-channels.html" class="guide-sidebar-link guide-sidebar-sublink">Phoenix Channels</a>
+        <a href="serialization.html" class="guide-sidebar-link guide-sidebar-sublink">Serialization</a>
         <a href="handlers.html" class="guide-sidebar-link">Handlers</a>
         <a href="buffering.html" class="guide-sidebar-link">Buffering</a>
         <a href="pipeline.html" class="guide-sidebar-link">Pipeline</a>
@@ -127,6 +128,33 @@ end</code></pre>
 
         <p>When <code>interested?/2</code> is not implemented, the adapter receives all events.</p>
 
+        <h2>Serialization</h2>
+
+        <p>Adapters can use the <code>Emissions.Serializer</code> behaviour to transform events before delivery. Accept a <code>:serializer</code> option in <code>init/1</code> and default to <code>Emissions.Serializer.Default</code> when none is configured:</p>
+
+<pre><code class="language-elixir">defmodule MyApp.WebhookAdapter do
+  @behaviour Emissions.Adapter
+
+  @impl true
+  def init(opts) do
+    url = Keyword.fetch!(opts, :url)
+    serializer = Keyword.get(opts, :serializer, Emissions.Serializer.Default)
+    {:ok, %{url: url, serializer: serializer}}
+  end
+
+  @impl true
+  def handle_events(events, state) do
+    payload = Enum.map(events, fn event -&gt; state.serializer.serialize(event) end)
+
+    case HTTPClient.post(state.url, Jason.encode!(payload)) do
+      {:ok, _response} -&gt; {:ok, state}
+      {:error, reason} -&gt; {:error, reason, state}
+    end
+  end
+end</code></pre>
+
+        <p>The default serializer produces JSON-friendly maps with no configuration required. Custom serializers can return maps, binaries (Avro, Protobuf), or any other format. See the <a href="serialization.html">Serialization guide</a> for details.</p>
+
         <h2>Configuration</h2>
 
         <p>Register adapters as <code>{module, opts}</code> tuples in your application config:</p>
@@ -208,6 +236,7 @@ graph TD
           <h4>Guides</h4>
           <a href="adapters.html">Adapters</a>
           <a href="phoenix-channels.html">Phoenix Channels</a>
+          <a href="serialization.html">Serialization</a>
           <a href="handlers.html">Handlers</a>
           <a href="buffering.html">Buffering</a>
         </div>
