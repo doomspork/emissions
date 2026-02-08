@@ -83,7 +83,7 @@ defmodule MyApp.WebhookAdapter do
 
   @impl true
   def handle_events(events, state) do
-    payload = Enum.map(events, &state.serializer.serialize/1)
+    payload = Enum.map(events, fn event -> state.serializer.serialize(event) end)
 
     case HTTPClient.post(state.url, Jason.encode!(payload)) do
       {:ok, _response} -> {:ok, state}

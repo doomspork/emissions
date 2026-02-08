@@ -3,8 +3,11 @@ if Code.ensure_loaded?(Phoenix.PubSub) do
     @moduledoc """
     Specialization of `Emissions.Serializer` for Phoenix Channels.
 
-    This behaviour narrows the return type to `map()` since Phoenix PubSub
-    broadcasting requires map payloads for JSON serialization over WebSockets.
+    This behaviour narrows the return type to `map()` to align with the
+    typical Phoenix Channels JSON encoding over WebSockets, which expects
+    map payloads when pushing to clients. `Phoenix.PubSub.broadcast/3` itself
+    can carry any Elixir term; this module standardizes on maps for
+    channel-facing payloads.
 
     For adapters that need binary, string, or other output formats, use
     `Emissions.Serializer` directly.

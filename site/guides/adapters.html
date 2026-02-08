@@ -144,7 +144,7 @@ end</code></pre>
 
   @impl true
   def handle_events(events, state) do
-    payload = Enum.map(events, &amp;state.serializer.serialize/1)
+    payload = Enum.map(events, fn event -&gt; state.serializer.serialize(event) end)
 
     case HTTPClient.post(state.url, Jason.encode!(payload)) do
       {:ok, _response} -&gt; {:ok, state}
