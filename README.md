@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="site/assets/images/logo.png" alt="Emissions" width="200">
+  <img src="https://doomspork.github.io/emissions/assets/images/logo.png" alt="Emissions" width="200">
 </p>
 
 <p align="center">
@@ -313,30 +313,7 @@ end
 
 ## Contributing
 
-1. Fork it
-2. Create your feature branch (`git checkout -b my-new-feature`)
-3. Write tests for your changes
-4. Ensure all tests pass (`mix test`)
-5. Run the formatter (`mix format`)
-6. Commit your changes using [conventional commits](https://www.conventionalcommits.org/)
-7. Push to the branch (`git push origin my-new-feature`)
-8. Create a Pull Request
-
-### Development
-
-```bash
-# Install dependencies
-mix deps.get
-
-# Run tests
-mix test
-
-# Run formatter
-mix format
-
-# Generate docs
-mix docs
-```
+Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 ## License
 
