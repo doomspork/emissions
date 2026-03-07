@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Adapters - Emissions Guide</title>
+  <meta name="description" content="Build custom adapters to deliver events to any destination with Emissions for Elixir.">
+
+  <link rel="icon" type="image/png" href="../assets/images/logo.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Inter:wght@400;500;600&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body class="guide-page">
+
+  <nav class="nav">
+    <div class="container nav-inner">
+      <a href="../index.html" class="nav-brand">
+        <img src="../assets/images/logo.png" alt="Emissions" class="nav-logo">
+        <span>Emissions</span>
+      </a>
+      <div class="nav-links">
+        <a href="../index.html#features">Features</a>
+        <a href="../index.html#quickstart">Quick Start</a>
+        <a href="../index.html#architecture">Architecture</a>
+        <a href="../index.html#guides">Guides</a>
+        <a href="https://github.com/doomspork/emissions" class="btn btn-sm btn-outline" target="_blank" rel="noopener">
+          <svg class="icon" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+          GitHub
+        </a>
+      </div>
+      <button class="nav-toggle" aria-label="Toggle navigation">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+
+  <div class="guide-layout">
+    <aside class="guide-sidebar">
+      <div class="guide-sidebar-title">Guides</div>
+      <nav class="guide-sidebar-nav">
+        <a href="adapters.html" class="guide-sidebar-link active">Adapters</a>
+        <a href="phoenix-channels.html" class="guide-sidebar-link guide-sidebar-sublink">Phoenix Channels</a>
+        <a href="serialization.html" class="guide-sidebar-link guide-sidebar-sublink">Serialization</a>
+        <a href="handlers.html" class="guide-sidebar-link">Handlers</a>
+        <a href="buffering.html" class="guide-sidebar-link">Buffering</a>
+        <a href="pipeline.html" class="guide-sidebar-link">Pipeline</a>
+        <a href="topic-routing.html" class="guide-sidebar-link">Topic Routing</a>
+        <a href="plug-integration.html" class="guide-sidebar-link">Plug Integration</a>
+        <a href="testing.html" class="guide-sidebar-link">Testing</a>
+        <a href="telemetry.html" class="guide-sidebar-link">Telemetry</a>
+      </nav>
+    </aside>
+
+    <main class="guide-content">
+      <div class="guide-breadcrumb">
+        <a href="../index.html">Home</a>
+        <span class="guide-breadcrumb-sep">/</span>
+        <a href="../index.html#guides">Guides</a>
+        <span class="guide-breadcrumb-sep">/</span>
+        Adapters
+      </div>
+
+      <article class="guide-article">
+        <h1>Adapters</h1>
+
+        <p>Adapters are the delivery mechanism for events. Each adapter implements the <code>Emissions.Adapter</code> behaviour and receives batches of events through the GenStage pipeline.</p>
+
+        <h2>Implementing an Adapter</h2>
+
+        <p>An adapter needs two callbacks: <code>init/1</code> and <code>handle_events/2</code>.</p>
+
+<pre><code class="language-elixir">defmodule MyApp.WebhookAdapter do
+  @behaviour Emissions.Adapter
+
+  @impl true
+  def init(opts) do
+    url = Keyword.fetch!(opts, :url)
+    {:ok, %{url: url}}
+  end
+
+  @impl true
+  def handle_events(events, state) do
+    payload = Enum.map(events, &amp;Map.from_struct/1)
+
+    case HTTPClient.post(state.url, Jason.encode!(payload)) do
+      {:ok, _response} -&gt; {:ok, state}
+      {:error, reason} -&gt; {:error, reason, state}
+    end
+  end
+end</code></pre>
+
+        <h3><code>init/1</code></h3>
+
+        <p>Called once when the adapter consumer starts. Receives the options from the configuration tuple. Return <code>{:ok, state}</code> where <code>state</code> is passed to all subsequent callbacks.</p>
+
+        <h3><code>handle_events/2</code></h3>
+
+        <p>Receives a batch of <code>Emissions.Event</code> structs and the current state. Return <code>{:ok, new_state}</code> on success or <code>{:error, reason, new_state}</code> on failure. Failures are logged and reported via telemetry but do not crash the adapter consumer.</p>
+
+        <h2>Filtering Events</h2>
+
+        <p>Implement the optional <code>interested?/2</code> callback to receive only specific events:</p>
+
+<pre><code class="language-elixir">defmodule MyApp.OrderWebhookAdapter do
+  @behaviour Emissions.Adapter
+
+  @impl true
+  def init(opts), do: {:ok, %{url: Keyword.fetch!(opts, :url)}}
+
+  @impl true
+  def interested?(event, _state) do
+    event.name in [:order_created, :order_shipped, :order_canceled]
+  end
+
+  @impl true
+  def handle_events(events, state) do
+    # Only receives order events
+    for event &lt;- events do
+      HTTPClient.post(state.url, Jason.encode!(event.payload))
+    end
+
+    {:ok, state}
+  end
+end</code></pre>
+
+        <p>When <code>interested?/2</code> is not implemented, the adapter receives all events.</p>
+
+        <h2>Serialization</h2>
+
+        <p>Adapters can use the <code>Emissions.Serializer</code> behaviour to transform events before delivery. Accept a <code>:serializer</code> option in <code>init/1</code> and default to <code>Emissions.Serializer.Default</code> when none is configured:</p>
+
+<pre><code class="language-elixir">defmodule MyApp.WebhookAdapter do
+  @behaviour Emissions.Adapter
+
+  @impl true
+  def init(opts) do
+    url = Keyword.fetch!(opts, :url)
+    serializer = Keyword.get(opts, :serializer, Emissions.Serializer.Default)
+    {:ok, %{url: url, serializer: serializer}}
+  end
+
+  @impl true
+  def handle_events(events, state) do
+    payload = Enum.map(events, fn event -&gt; state.serializer.serialize(event) end)
+
+    case HTTPClient.post(state.url, Jason.encode!(payload)) do
+      {:ok, _response} -&gt; {:ok, state}
+      {:error, reason} -&gt; {:error, reason, state}
+    end
+  end
+end</code></pre>
+
+        <p>The default serializer produces JSON-friendly maps with no configuration required. Custom serializers can return maps, binaries (Avro, Protobuf), or any other format. See the <a href="serialization.html">Serialization guide</a> for details.</p>
+
+        <h2>Configuration</h2>
+
+        <p>Register adapters as <code>{module, opts}</code> tuples in your application config:</p>
+
+<pre><code class="language-elixir">config :emissions,
+  adapters: [
+    {MyApp.KafkaAdapter, topic: "domain-events", producer: MyApp.KafkaProducer},
+    {MyApp.WebhookAdapter, url: "https://hooks.example.com/events"},
+    {MyApp.WebSocketAdapter, endpoint: MyApp.Endpoint}
+  ]</code></pre>
+
+        <p>Each adapter gets its own GenStage consumer with independent backpressure. A slow Kafka adapter will not block the WebSocket adapter.</p>
+
+        <h2>Adapter Lifecycle</h2>
+
+        <div class="mermaid">
+graph TD
+    A["Application Starts"] --> B["AdapterSupervisor creates<br/>AdapterConsumer"]
+    B --> C["adapter.init(opts)"]
+    C --> D["Subscribe to Producer"]
+    D --> E{"Events arrive<br/>in batch"}
+    E --> F{"interested?/2<br/>implemented?"}
+    F -->|Yes| G["Filter events"]
+    F -->|No| H["All events pass"]
+    G --> I["handle_events/2"]
+    H --> I
+    I -->|"{:ok, state}"| J["Telemetry: success"]
+    I -->|"{:error, reason, state}"| K["Telemetry: error<br/>Log warning"]
+    I -->|"Exception raised"| L["Consumer crashes"]
+    J --> E
+    K --> E
+    L --> B
+
+    style A fill:#6366f1,color:#fff
+    style I fill:#4a9eff,color:#fff
+    style L fill:#ef4444,color:#fff
+        </div>
+
+        <h2>Error Handling</h2>
+
+        <p>When <code>handle_events/2</code> returns <code>{:error, reason, state}</code>:</p>
+
+        <ul>
+          <li>The error is logged via <code>Logger.error/2</code></li>
+          <li>A <code>[:emissions, :adapter, :error]</code> telemetry event is emitted</li>
+          <li>The consumer continues processing &mdash; it does not crash or restart</li>
+          <li>The updated state is preserved</li>
+        </ul>
+
+        <p>If the adapter raises an exception, the GenStage consumer crashes and the supervisor restarts it. The adapter's <code>init/1</code> is called again with the original options, so any accumulated state is lost.</p>
+      </article>
+
+      <div class="guide-pager">
+        <span class="guide-pager-spacer"></span>
+        <a href="phoenix-channels.html" class="guide-pager-next">
+          <span class="guide-pager-label">Next</span>
+          <span class="guide-pager-title">Phoenix Channels &rarr;</span>
+        </a>
+      </div>
+    </main>
+  </div>
+
+  <button class="guide-sidebar-toggle">Guides</button>
+
+  <footer class="footer">
+    <div class="container footer-inner">
+      <div class="footer-brand">
+        <img src="../assets/images/logo.png" alt="Emissions" class="footer-logo">
+        <p>Event emission for Elixir, made with love.</p>
+      </div>
+      <div class="footer-links">
+        <div class="footer-col">
+          <h4>Resources</h4>
+          <a href="https://hexdocs.pm/emissions" target="_blank" rel="noopener">HexDocs</a>
+          <a href="https://hex.pm/packages/emissions" target="_blank" rel="noopener">Hex.pm</a>
+          <a href="https://github.com/doomspork/emissions" target="_blank" rel="noopener">GitHub</a>
+        </div>
+        <div class="footer-col">
+          <h4>Guides</h4>
+          <a href="adapters.html">Adapters</a>
+          <a href="phoenix-channels.html">Phoenix Channels</a>
+          <a href="serialization.html">Serialization</a>
+          <a href="handlers.html">Handlers</a>
+          <a href="buffering.html">Buffering</a>
+        </div>
+        <div class="footer-col">
+          <h4>More</h4>
+          <a href="pipeline.html">Pipeline</a>
+          <a href="topic-routing.html">Topic Routing</a>
+          <a href="plug-integration.html">Plug Integration</a>
+          <a href="testing.html">Testing</a>
+          <a href="telemetry.html">Telemetry</a>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>MIT License &mdash; <a href="https://github.com/doomspork/emissions" target="_blank" rel="noopener">doomspork/emissions</a></p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-elixir.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script>
+    mermaid.initialize({ startOnLoad: true, theme: 'default', themeVariables: { primaryColor: '#ede9fe', primaryTextColor: '#1e1b4b', primaryBorderColor: '#7c3aed', lineColor: '#a78bfa', secondaryColor: '#fce7f3', tertiaryColor: '#f5f3ff' } });
+    document.querySelector('.nav-toggle').setAttribute('aria-expanded', 'false');
+    document.querySelector('.nav-toggle').setAttribute('aria-controls', 'nav-links');
+    document.querySelector('.nav-links').id = 'nav-links';
+    document.querySelector('.nav-toggle').addEventListener('click', function() { var isOpen = document.querySelector('.nav-links').classList.toggle('open'); this.classList.toggle('open'); this.setAttribute('aria-expanded', String(isOpen)); });
+    window.addEventListener('scroll', function() { var nav = document.querySelector('.nav'); if (window.scrollY > 50) { nav.classList.add('scrolled'); } else { nav.classList.remove('scrolled'); } });
+    var sidebarToggle = document.querySelector('.guide-sidebar-toggle'); if (sidebarToggle) { document.querySelector('.guide-sidebar').id = 'guide-sidebar'; sidebarToggle.setAttribute('aria-expanded', 'false'); sidebarToggle.setAttribute('aria-controls', 'guide-sidebar'); sidebarToggle.addEventListener('click', function() { var isOpen = document.querySelector('.guide-sidebar').classList.toggle('open'); this.setAttribute('aria-expanded', String(isOpen)); }); }
+  </script>
+</body>
+</html>

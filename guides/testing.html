@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Testing - Emissions Guide</title>
+  <meta name="description" content="Test helpers for capturing emitted events and making assertions in your Elixir test suite with Emissions.">
+
+  <link rel="icon" type="image/png" href="../assets/images/logo.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Inter:wght@400;500;600&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body class="guide-page">
+
+  <nav class="nav">
+    <div class="container nav-inner">
+      <a href="../index.html" class="nav-brand">
+        <img src="../assets/images/logo.png" alt="Emissions" class="nav-logo">
+        <span>Emissions</span>
+      </a>
+      <div class="nav-links">
+        <a href="../index.html#features">Features</a>
+        <a href="../index.html#quickstart">Quick Start</a>
+        <a href="../index.html#architecture">Architecture</a>
+        <a href="../index.html#guides">Guides</a>
+        <a href="https://github.com/doomspork/emissions" class="btn btn-sm btn-outline" target="_blank" rel="noopener">
+          <svg class="icon" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+          GitHub
+        </a>
+      </div>
+      <button class="nav-toggle" aria-label="Toggle navigation">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+
+  <div class="guide-layout">
+    <aside class="guide-sidebar">
+      <div class="guide-sidebar-title">Guides</div>
+      <nav class="guide-sidebar-nav">
+        <a href="adapters.html" class="guide-sidebar-link">Adapters</a>
+        <a href="phoenix-channels.html" class="guide-sidebar-link guide-sidebar-sublink">Phoenix Channels</a>
+        <a href="serialization.html" class="guide-sidebar-link guide-sidebar-sublink">Serialization</a>
+        <a href="handlers.html" class="guide-sidebar-link">Handlers</a>
+        <a href="buffering.html" class="guide-sidebar-link">Buffering</a>
+        <a href="pipeline.html" class="guide-sidebar-link">Pipeline</a>
+        <a href="topic-routing.html" class="guide-sidebar-link">Topic Routing</a>
+        <a href="plug-integration.html" class="guide-sidebar-link">Plug Integration</a>
+        <a href="testing.html" class="guide-sidebar-link active">Testing</a>
+        <a href="telemetry.html" class="guide-sidebar-link">Telemetry</a>
+      </nav>
+    </aside>
+
+    <main class="guide-content">
+      <div class="guide-breadcrumb">
+        <a href="../index.html">Home</a>
+        <span class="guide-breadcrumb-sep">/</span>
+        <a href="../index.html#guides">Guides</a>
+        <span class="guide-breadcrumb-sep">/</span>
+        Testing
+      </div>
+
+      <article class="guide-article">
+        <h1>Testing</h1>
+
+        <p>Emissions includes test helpers for capturing emitted events and making assertions in your test suite.</p>
+
+        <h2>Setup</h2>
+
+        <h3>1. Configure the Test Adapter</h3>
+
+<pre><code class="language-elixir"># config/test.exs
+config :emissions,
+  adapters: [{Emissions.Testing.TestAdapter, []}],
+  handlers: []</code></pre>
+
+        <h3>2. Initialize the Event Store</h3>
+
+<pre><code class="language-elixir"># test/test_helper.exs
+Emissions.Testing.setup()
+ExUnit.start()</code></pre>
+
+        <h3>3. Reset Between Tests</h3>
+
+<pre><code class="language-elixir">setup do
+  Emissions.Testing.reset()
+  :ok
+end</code></pre>
+
+        <h2>Assertions</h2>
+
+        <p>Import <code>Emissions.Testing</code> to use the assertion macros:</p>
+
+<pre><code class="language-elixir">defmodule MyApp.OrdersTest do
+  use ExUnit.Case
+  import Emissions.Testing
+
+  setup do
+    Emissions.Testing.reset()
+    :ok
+  end
+
+  test "creating an order emits order_created" do
+    MyApp.Orders.create(%{item: "widget", qty: 5})
+
+    assert_emitted(:order_created)
+  end
+
+  test "can assert on event payload" do
+    MyApp.Orders.create(%{item: "widget", qty: 5})
+
+    assert_emitted(:order_created, fn event -&gt;
+      assert event.payload.item == "widget"
+      assert event.payload.qty == 5
+    end)
+  end
+
+  test "failed operations don't emit events" do
+    MyApp.Orders.create(%{invalid: true})
+
+    refute_emitted(:order_created)
+  end
+end</code></pre>
+
+        <h3><code>assert_emitted/1</code></h3>
+
+        <p>Asserts that at least one event with the given name was emitted:</p>
+
+<pre><code class="language-elixir">assert_emitted(:order_created)</code></pre>
+
+        <h3><code>assert_emitted/2</code></h3>
+
+        <p>Asserts the event was emitted and runs a function on each matching event for further assertions:</p>
+
+<pre><code class="language-elixir">assert_emitted(:order_created, fn event -&gt;
+  assert event.payload.total &gt; 0
+  assert event.metadata.source == "api"
+end)</code></pre>
+
+        <h3><code>refute_emitted/1</code></h3>
+
+        <p>Asserts that no event with the given name was emitted:</p>
+
+<pre><code class="language-elixir">refute_emitted(:order_canceled)</code></pre>
+
+        <h2>Querying Events</h2>
+
+        <p>For more complex assertions, query the event store directly:</p>
+
+<pre><code class="language-elixir"># Get all captured events
+events = Emissions.Testing.get_events()
+
+# Get events by name
+order_events = Emissions.Testing.events_named(:order_created)
+
+# Check if an event was emitted
+Emissions.Testing.emitted?(:order_created)</code></pre>
+
+        <h2>Async Considerations</h2>
+
+        <p>Because events flow through a GenStage pipeline, there is a small delay between <code>commit/0</code> and events arriving at the test adapter. If your tests assert immediately after the code under test runs, you may need a brief wait:</p>
+
+<pre><code class="language-elixir">test "events arrive after pipeline processes them" do
+  MyApp.Orders.create(%{item: "widget"})
+
+  # Allow the GenStage pipeline to deliver
+  Process.sleep(50)
+
+  assert_emitted(:order_created)
+end</code></pre>
+
+        <p>If your code under test already calls <code>Emissions.commit()</code> and the test calls the code synchronously, this is typically sufficient. The 50ms sleep is a conservative safety margin.</p>
+
+        <h2>Testing Handlers</h2>
+
+        <p>To test handlers in isolation, call them directly without the pipeline:</p>
+
+<pre><code class="language-elixir">test "handler processes order_created" do
+  result = MyApp.SearchIndexHandler.handle_event(
+    :order_created,
+    %{id: 1, name: "Widget"},
+    %{}
+  )
+
+  assert result == :ok
+end</code></pre>
+
+        <p>To test handlers with cascading events, start a buffer first:</p>
+
+<pre><code class="language-elixir">test "handler emits cascading events" do
+  Emissions.start()
+  result = MyApp.FulfillmentHandler.handle_event(:order_created, order, %{})
+  assert result == :ok
+  Emissions.commit()
+
+  Process.sleep(50)
+  assert_emitted(:order_fulfillable)
+end</code></pre>
+      </article>
+
+      <div class="guide-pager">
+        <a href="plug-integration.html" class="guide-pager-prev">
+          <span class="guide-pager-label">Previous</span>
+          <span class="guide-pager-title">&larr; Plug Integration</span>
+        </a>
+        <a href="telemetry.html" class="guide-pager-next">
+          <span class="guide-pager-label">Next</span>
+          <span class="guide-pager-title">Telemetry &rarr;</span>
+        </a>
+      </div>
+    </main>
+  </div>
+
+  <button class="guide-sidebar-toggle">Guides</button>
+
+  <footer class="footer">
+    <div class="container footer-inner">
+      <div class="footer-brand">
+        <img src="../assets/images/logo.png" alt="Emissions" class="footer-logo">
+        <p>Event emission for Elixir, made with love.</p>
+      </div>
+      <div class="footer-links">
+        <div class="footer-col">
+          <h4>Resources</h4>
+          <a href="https://hexdocs.pm/emissions" target="_blank" rel="noopener">HexDocs</a>
+          <a href="https://hex.pm/packages/emissions" target="_blank" rel="noopener">Hex.pm</a>
+          <a href="https://github.com/doomspork/emissions" target="_blank" rel="noopener">GitHub</a>
+        </div>
+        <div class="footer-col">
+          <h4>Guides</h4>
+          <a href="adapters.html">Adapters</a>
+          <a href="phoenix-channels.html">Phoenix Channels</a>
+          <a href="serialization.html">Serialization</a>
+          <a href="handlers.html">Handlers</a>
+          <a href="buffering.html">Buffering</a>
+        </div>
+        <div class="footer-col">
+          <h4>More</h4>
+          <a href="pipeline.html">Pipeline</a>
+          <a href="topic-routing.html">Topic Routing</a>
+          <a href="plug-integration.html">Plug Integration</a>
+          <a href="testing.html">Testing</a>
+          <a href="telemetry.html">Telemetry</a>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>MIT License &mdash; <a href="https://github.com/doomspork/emissions" target="_blank" rel="noopener">doomspork/emissions</a></p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-elixir.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script>
+    mermaid.initialize({ startOnLoad: true, theme: 'default', themeVariables: { primaryColor: '#ede9fe', primaryTextColor: '#1e1b4b', primaryBorderColor: '#7c3aed', lineColor: '#a78bfa', secondaryColor: '#fce7f3', tertiaryColor: '#f5f3ff' } });
+    document.querySelector('.nav-toggle').setAttribute('aria-expanded', 'false');
+    document.querySelector('.nav-toggle').setAttribute('aria-controls', 'nav-links');
+    document.querySelector('.nav-links').id = 'nav-links';
+    document.querySelector('.nav-toggle').addEventListener('click', function() { var isOpen = document.querySelector('.nav-links').classList.toggle('open'); this.classList.toggle('open'); this.setAttribute('aria-expanded', String(isOpen)); });
+    window.addEventListener('scroll', function() { var nav = document.querySelector('.nav'); if (window.scrollY > 50) { nav.classList.add('scrolled'); } else { nav.classList.remove('scrolled'); } });
+    var sidebarToggle = document.querySelector('.guide-sidebar-toggle'); if (sidebarToggle) { document.querySelector('.guide-sidebar').id = 'guide-sidebar'; sidebarToggle.setAttribute('aria-expanded', 'false'); sidebarToggle.setAttribute('aria-controls', 'guide-sidebar'); sidebarToggle.addEventListener('click', function() { var isOpen = document.querySelector('.guide-sidebar').classList.toggle('open'); this.setAttribute('aria-expanded', String(isOpen)); }); }
+  </script>
+</body>
+</html>

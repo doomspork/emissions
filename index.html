@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Emissions - Event Emission Library for Elixir</title>
+  <meta name="description" content="Event emission library for Elixir with pluggable adapters, per-request buffering, and a GenStage-powered delivery pipeline.">
+
+  <link rel="icon" type="image/png" href="assets/images/logo.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Inter:wght@400;500;600&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- Navigation -->
+  <nav class="nav">
+    <div class="container nav-inner">
+      <a href="#" class="nav-brand">
+        <img src="assets/images/logo.png" alt="Emissions" class="nav-logo">
+        <span>Emissions</span>
+      </a>
+      <div class="nav-links">
+        <a href="#features">Features</a>
+        <a href="#quickstart">Quick Start</a>
+        <a href="#architecture">Architecture</a>
+        <a href="#guides">Guides</a>
+        <a href="https://github.com/doomspork/emissions" class="btn btn-sm btn-outline" target="_blank" rel="noopener">
+          <svg class="icon" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+          GitHub
+        </a>
+      </div>
+      <button class="nav-toggle" aria-label="Toggle navigation">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="sparkles" aria-hidden="true">
+      <div class="sparkle sparkle-1"></div>
+      <div class="sparkle sparkle-2"></div>
+      <div class="sparkle sparkle-3"></div>
+      <div class="sparkle sparkle-4"></div>
+      <div class="sparkle sparkle-5"></div>
+      <div class="sparkle sparkle-6"></div>
+      <div class="sparkle sparkle-7"></div>
+      <div class="sparkle sparkle-8"></div>
+      <div class="sparkle sparkle-9"></div>
+      <div class="sparkle sparkle-10"></div>
+    </div>
+    <div class="container hero-inner">
+      <img src="assets/images/logo.png" alt="Emissions mascot - a cute rocket" class="hero-logo">
+      <h1 class="hero-title">Emissions</h1>
+      <p class="hero-subtitle">
+        Event emission library for Elixir with pluggable adapters, per-request buffering,
+        and a GenStage-powered delivery pipeline.
+      </p>
+      <p class="hero-tagline">
+        Born from production event systems at
+        <a href="https://stord.com" target="_blank" rel="noopener">Stord</a> and
+        <a href="https://hiive.com" target="_blank" rel="noopener">Hiive</a>.
+      </p>
+      <div class="hero-actions">
+        <a href="#quickstart" class="btn btn-primary">Get Started</a>
+        <a href="https://hexdocs.pm/emissions" class="btn btn-secondary" target="_blank" rel="noopener">HexDocs</a>
+        <a href="https://github.com/doomspork/emissions" class="btn btn-outline" target="_blank" rel="noopener">
+          <svg class="icon" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+          GitHub
+        </a>
+      </div>
+      <div class="hero-install">
+        <code>{:emissions, "~> 0.1.0"}</code>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section id="features" class="features">
+    <div class="container">
+      <h2 class="section-title">Why Emissions?</h2>
+      <p class="section-subtitle">Everything you need for structured event delivery in Elixir</p>
+      <div class="feature-grid">
+        <div class="feature-card">
+          <div class="feature-icon feature-icon-purple">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+          </div>
+          <h3>Per-Request Buffering</h3>
+          <p>Collect events during a request or transaction and commit them atomically. No events leak on failure.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon feature-icon-pink">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+          </div>
+          <h3>Pluggable Adapters</h3>
+          <p>Built-in Phoenix Channels adapter for real-time WebSocket delivery, plus a simple behaviour for custom adapters.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon feature-icon-teal">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          </div>
+          <h3>GenStage Pipeline</h3>
+          <p>Fan-out to multiple adapters with independent backpressure per consumer. Built on GenStage.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon feature-icon-yellow">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+          </div>
+          <h3>Event Handlers</h3>
+          <p>Subscribe to events with supervised task execution and cascading support for internal workflows.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon feature-icon-orange">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+          </div>
+          <h3>Topic Routing</h3>
+          <p>Compile-time event-to-topic mapping with multi-tenant scoping. Isolate WebSocket topics per tenant with a single config option.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon feature-icon-lavender">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+          </div>
+          <h3>Telemetry &amp; Testing</h3>
+          <p>Built-in telemetry events for monitoring, plus test helpers for capturing and asserting on emitted events.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Quick Start -->
+  <section id="quickstart" class="quickstart">
+    <div class="container">
+      <h2 class="section-title">Quick Start</h2>
+      <p class="section-subtitle">Get up and running in minutes</p>
+
+      <div class="steps">
+        <div class="step">
+          <div class="step-number">1</div>
+          <div class="step-content">
+            <h3>Configure your adapters and handlers</h3>
+            <pre><code class="language-elixir"># config/config.exs
+config :emissions,
+  adapters: [
+    {Emissions.Phoenix.PubSubAdapter,
+     pubsub: MyApp.PubSub,
+     scope: :org_id},            # multi-tenant topic scoping
+    {MyApp.KafkaAdapter, topic: "my-events"}
+  ],
+  handlers: [
+    MyApp.SearchIndexHandler,
+    MyApp.NotificationHandler
+  ]</code></pre>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-number">2</div>
+          <div class="step-content">
+            <h3>Add the Plug to your Phoenix pipeline</h3>
+            <pre><code class="language-elixir"># router.ex — auto-manages buffer lifecycle per request
+pipeline :api do
+  plug :accepts, ["json"]
+  plug Emissions.Plug
+end</code></pre>
+            <p class="step-note">The plug starts a buffer for mutating requests, commits on 2xx responses, and terminates on errors. Just emit events in your controllers — no manual start/commit needed.</p>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-number">3</div>
+          <div class="step-content">
+            <h3>Emit events in your application code</h3>
+            <pre><code class="language-elixir">def create_order(conn, params) do
+  case Orders.insert(params) do
+    {:ok, order} ->
+      Emissions.emit(:order_created, order, %{source: "api"})
+      json(conn, %{id: order.id})
+
+    {:error, changeset} ->
+      conn
+      |> put_status(:unprocessable_entity)
+      |> json(%{errors: format_errors(changeset)})
+  end
+end</code></pre>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-number">4</div>
+          <div class="step-content">
+            <h3>Route events to topics (optional)</h3>
+            <pre><code class="language-elixir">defmodule MyApp.Topics do
+  use Emissions.TopicRouter,
+    mappings: %{
+      orders: [:order_created, :order_updated, :order_shipped],
+      inventory: [:item_received, :item_adjusted, :item_moved],
+      users: [:user_created, :user_updated]
+    }
+end
+
+MyApp.Topics.topic_for_event(:order_created)
+#=> :orders</code></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Architecture -->
+  <section id="architecture" class="architecture">
+    <div class="container">
+      <h2 class="section-title">Architecture</h2>
+      <p class="section-subtitle">A GenStage pipeline with fan-out to multiple adapters</p>
+
+      <div class="arch-diagram">
+        <div class="arch-row">
+          <div class="arch-node arch-app">
+            <div class="arch-label">Your Application</div>
+            <code>emit() / commit()</code>
+          </div>
+        </div>
+        <div class="arch-arrow"></div>
+        <div class="arch-row">
+          <div class="arch-node arch-buffer">
+            <div class="arch-label">Buffer</div>
+            <code>GenServer, per-request</code>
+          </div>
+        </div>
+        <div class="arch-arrow"></div>
+        <div class="arch-row">
+          <div class="arch-node arch-producer">
+            <div class="arch-label">Pipeline Producer</div>
+            <code>GenStage + BroadcastDispatcher</code>
+          </div>
+        </div>
+        <div class="arch-fanout">
+          <div class="arch-arrow-branch"></div>
+          <div class="arch-arrow-branch"></div>
+          <div class="arch-arrow-branch"></div>
+        </div>
+        <div class="arch-row arch-consumers">
+          <div class="arch-node arch-adapter">
+            <div class="arch-label">Kafka Adapter</div>
+          </div>
+          <div class="arch-node arch-adapter">
+            <div class="arch-label">Phoenix Channels</div>
+          </div>
+          <div class="arch-node arch-handler">
+            <div class="arch-label">Handler Dispatcher</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="arch-description">
+        <p>
+          Events flow through a per-request buffer, get committed to a GenStage producer,
+          and fan out to all registered adapter consumers. Each consumer manages its own backpressure independently.
+          The Handler Dispatcher is a special adapter that routes events to your internal handler modules,
+          executing each in a supervised task.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Buffer Lifecycle -->
+  <section class="lifecycle">
+    <div class="container">
+      <h2 class="section-title">Buffer Lifecycle</h2>
+      <p class="section-subtitle">Transactional event buffering with clean semantics</p>
+
+      <div class="lifecycle-flow">
+        <div class="lifecycle-step lifecycle-start">
+          <div class="lifecycle-dot"></div>
+          <div class="lifecycle-info">
+            <strong>start()</strong>
+            <span>Create a per-request buffer</span>
+          </div>
+        </div>
+        <div class="lifecycle-connector"></div>
+        <div class="lifecycle-step lifecycle-emit">
+          <div class="lifecycle-dot"></div>
+          <div class="lifecycle-info">
+            <strong>emit()</strong>
+            <span>Append events to the buffer</span>
+          </div>
+        </div>
+        <div class="lifecycle-branch">
+          <div class="lifecycle-path lifecycle-path-success">
+            <div class="lifecycle-connector"></div>
+            <div class="lifecycle-step lifecycle-commit">
+              <div class="lifecycle-dot"></div>
+              <div class="lifecycle-info">
+                <strong>commit()</strong>
+                <span>Send to pipeline &amp; close buffer</span>
+              </div>
+            </div>
+          </div>
+          <div class="lifecycle-path lifecycle-path-alt">
+            <div class="lifecycle-connector"></div>
+            <div class="lifecycle-step lifecycle-flush">
+              <div class="lifecycle-dot"></div>
+              <div class="lifecycle-info">
+                <strong>flush()</strong>
+                <span>Send to pipeline &amp; keep open</span>
+              </div>
+            </div>
+          </div>
+          <div class="lifecycle-path lifecycle-path-error">
+            <div class="lifecycle-connector"></div>
+            <div class="lifecycle-step lifecycle-terminate">
+              <div class="lifecycle-dot"></div>
+              <div class="lifecycle-info">
+                <strong>terminate()</strong>
+                <span>Discard events &amp; clean up</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Guides -->
+  <section id="guides" class="guides">
+    <div class="container">
+      <h2 class="section-title">Guides</h2>
+      <p class="section-subtitle">Dive deeper with our comprehensive guides</p>
+      <div class="guide-grid">
+        <a href="guides/adapters.html" class="guide-card">
+          <div class="guide-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+          </div>
+          <h3>Adapters</h3>
+          <p>Build custom adapters to deliver events to any destination.</p>
+        </a>
+        <a href="guides/phoenix-channels.html" class="guide-card">
+          <div class="guide-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/><circle cx="19" cy="12" r="2"/><circle cx="5" cy="12" r="2"/></svg>
+          </div>
+          <h3>Phoenix Channels</h3>
+          <p>Real-time event delivery over WebSockets with built-in PubSub adapter and multi-tenant topic scoping.</p>
+        </a>
+        <a href="guides/serialization.html" class="guide-card">
+          <div class="guide-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><path d="M9 14l2 2 4-4"/></svg>
+          </div>
+          <h3>Serialization</h3>
+          <p>Pluggable event serialization for maps, Avro, Protobuf, and custom formats.</p>
+        </a>
+        <a href="guides/handlers.html" class="guide-card">
+          <div class="guide-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+          </div>
+          <h3>Handlers</h3>
+          <p>Subscribe to events and handle them in supervised tasks.</p>
+        </a>
+        <a href="guides/buffering.html" class="guide-card">
+          <div class="guide-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+          </div>
+          <h3>Buffering</h3>
+          <p>Per-request event buffering with transactional semantics.</p>
+        </a>
+        <a href="guides/pipeline.html" class="guide-card">
+          <div class="guide-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          </div>
+          <h3>Pipeline</h3>
+          <p>GenStage producer with BroadcastDispatcher for fan-out delivery.</p>
+        </a>
+        <a href="guides/topic-routing.html" class="guide-card">
+          <div class="guide-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+          </div>
+          <h3>Topic Routing</h3>
+          <p>Compile-time event-to-topic mapping with zero runtime overhead.</p>
+        </a>
+        <a href="guides/plug-integration.html" class="guide-card">
+          <div class="guide-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          </div>
+          <h3>Plug Integration</h3>
+          <p>Automatic buffer lifecycle management for Phoenix and Plug apps.</p>
+        </a>
+        <a href="guides/testing.html" class="guide-card">
+          <div class="guide-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          </div>
+          <h3>Testing</h3>
+          <p>Test helpers for capturing and asserting on emitted events.</p>
+        </a>
+        <a href="guides/telemetry.html" class="guide-card">
+          <div class="guide-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+          </div>
+          <h3>Telemetry</h3>
+          <p>Comprehensive instrumentation for monitoring and observability.</p>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container footer-inner">
+      <div class="footer-brand">
+        <img src="assets/images/logo.png" alt="Emissions" class="footer-logo">
+        <p>Event emission for Elixir, made with love.</p>
+      </div>
+      <div class="footer-links">
+        <div class="footer-col">
+          <h4>Resources</h4>
+          <a href="https://hexdocs.pm/emissions" target="_blank" rel="noopener">HexDocs</a>
+          <a href="https://hex.pm/packages/emissions" target="_blank" rel="noopener">Hex.pm</a>
+          <a href="https://github.com/doomspork/emissions" target="_blank" rel="noopener">GitHub</a>
+        </div>
+        <div class="footer-col">
+          <h4>Guides</h4>
+          <a href="guides/adapters.html">Adapters</a>
+          <a href="guides/phoenix-channels.html">Phoenix Channels</a>
+          <a href="guides/serialization.html">Serialization</a>
+          <a href="guides/handlers.html">Handlers</a>
+          <a href="guides/buffering.html">Buffering</a>
+        </div>
+        <div class="footer-col">
+          <h4>More</h4>
+          <a href="guides/pipeline.html">Pipeline</a>
+          <a href="guides/topic-routing.html">Topic Routing</a>
+          <a href="guides/plug-integration.html">Plug Integration</a>
+          <a href="guides/testing.html">Testing</a>
+          <a href="guides/telemetry.html">Telemetry</a>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>MIT License &mdash; <a href="https://github.com/doomspork/emissions" target="_blank" rel="noopener">doomspork/emissions</a></p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-elixir.min.js"></script>
+  <script>
+    // Mobile nav toggle
+    document.querySelector('.nav-toggle').addEventListener('click', function() {
+      document.querySelector('.nav-links').classList.toggle('open');
+      this.classList.toggle('open');
+    });
+
+    // Smooth scroll for anchor links
+    document.querySelectorAll('a[href^="#"]').forEach(function(anchor) {
+      anchor.addEventListener('click', function(e) {
+        var target = document.querySelector(this.getAttribute('href'));
+        if (target) {
+          e.preventDefault();
+          target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          // Close mobile nav if open
+          document.querySelector('.nav-links').classList.remove('open');
+          document.querySelector('.nav-toggle').classList.remove('open');
+        }
+      });
+    });
+
+    // Add scroll-based nav background
+    window.addEventListener('scroll', function() {
+      var nav = document.querySelector('.nav');
+      if (window.scrollY > 50) {
+        nav.classList.add('scrolled');
+      } else {
+        nav.classList.remove('scrolled');
+      }
+    });
+  </script>
+</body>
+</html>
