@@ -208,7 +208,7 @@ defmodule Emissions.Phoenix.PubSubAdapterTest do
       assert_receive {:emissions_event, %{name: :user_created}}
     end
 
-    test "falls back to unscoped when scope resolves to nil", %{pubsub: pubsub} do
+    test "drops an event when the configured scope is missing", %{pubsub: pubsub} do
       {:ok, state} = PubSubAdapter.init(pubsub: pubsub, scope: :org_id)
 
       Phoenix.PubSub.subscribe(pubsub, "emissions")
@@ -217,8 +217,7 @@ defmodule Emissions.Phoenix.PubSubAdapterTest do
       event = Emissions.Event.new(:order_created, %{id: 1}, %{})
       assert {:ok, _state} = PubSubAdapter.handle_events([event], state)
 
-      assert_receive {:emissions_event, _payload}
-      assert_receive {:emissions_event, _payload}
+      refute_receive {:emissions_event, _payload}
     end
 
     test "scoped topics work with topic_router", %{pubsub: pubsub} do

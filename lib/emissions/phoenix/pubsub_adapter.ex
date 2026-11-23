@@ -48,8 +48,7 @@ if Code.ensure_loaded?(Phoenix.PubSub) do
     2. `"emissions:acme:orders"` — scoped topic group
     3. `"emissions:acme:order_created"` — scoped event name
 
-    When the scope resolves to `nil` (or is not configured), topics remain
-    unscoped for backwards compatibility.
+    Events with a missing or invalid configured scope are dropped.
 
     ## Options
 
@@ -107,12 +106,36 @@ if Code.ensure_loaded?(Phoenix.PubSub) do
     end
 
     defp resolve_topics(event, state) do
-      prefix =
-        case resolve_scope(event, state) do
-          nil -> state.topic_prefix
-          scope_value -> "#{state.topic_prefix}:#{scope_value}"
-        end
+      scope = resolve_scope(event, state)
 
+      cond do
+        is_nil(state.scope) ->
+          topics_for_prefix(event, state, state.topic_prefix)
+
+        valid_scope?(scope) ->
+          topics_for_prefix(event, state, "#{state.topic_prefix}:#{scope}")
+
+        true ->
+          :telemetry.execute([:emissions, :event, :dropped], %{count: 1}, %{
+            event_name: event.name,
+            reason: :invalid_scope
+          })
+
+          []
+      end
+    end
+
+    defp valid_scope?(scope) when is_integer(scope), do: true
+
+    defp valid_scope?(scope) when is_atom(scope) and not is_nil(scope),
+      do: valid_scope?(Atom.to_string(scope))
+
+    defp valid_scope?(scope) when is_binary(scope),
+      do: scope != "" and not String.contains?(scope, ":")
+
+    defp valid_scope?(_scope), do: false
+
+    defp topics_for_prefix(event, state, prefix) do
       event_topic = "#{prefix}:#{event.name}"
       topics = [prefix, event_topic]
 

@@ -14,7 +14,7 @@ The Phoenix adapter modules are compiled only when Phoenix is available. If your
 
 ## Quick Start
 
-Three steps to get events flowing to WebSocket clients:
+This example creates a public feed. For private events, configure the tenant policy below and use a distinct topic prefix for each feed.
 
 ### 1. Add the adapter to your config
 
@@ -29,7 +29,7 @@ config :emissions,
 
 ```elixir
 defmodule MyAppWeb.EmissionsChannel do
-  use Emissions.Phoenix.Channel
+  use Emissions.Phoenix.Channel, access: :public
 end
 ```
 
@@ -145,7 +145,7 @@ When scope resolves to a non-nil value (e.g., `"acme"`), all topics include the 
 | Scoped topic group | `"emissions:acme:orders"` | Order events for tenant "acme" (with TopicRouter) |
 | Scoped event name | `"emissions:acme:order_created"` | `order_created` events for tenant "acme" |
 
-When scope resolves to `nil` (e.g., metadata key is missing), topics fall back to the unscoped format.
+When scope resolves to `nil` (e.g., metadata key is missing), the adapter drops the event and emits dropped-event telemetry.
 
 ### Usage
 
@@ -168,23 +168,16 @@ channel.on("event", (payload) => {
 
 ### Channel Authorization
 
-Combine scoping with channel authorization to enforce tenant boundaries:
+Set the tenant assign during socket authentication. Use a dedicated prefix for scoped events.
+Missing assigns, missing scopes, and tenant IDs containing a colon are rejected.
 
 ```elixir
 defmodule MyAppWeb.EmissionsChannel do
-  use Emissions.Phoenix.Channel
-
-  def join("emissions:" <> rest = topic, params, socket) do
-    tenant_id = socket.assigns[:tenant_id]
-
-    if rest == tenant_id or String.starts_with?(rest, tenant_id <> ":") do
-      super(topic, params, socket)
-    else
-      {:error, %{reason: "unauthorized"}}
-    end
-  end
+  use Emissions.Phoenix.Channel, access: {:tenant, :tenant_id}
 end
 ```
+
+Channels without an explicit access policy deny joins. Existing public feeds must opt in with `access: :public`.
 
 ## Custom Serialization
 
@@ -224,7 +217,7 @@ Override `join/3` in your channel to add authorization:
 
 ```elixir
 defmodule MyAppWeb.EmissionsChannel do
-  use Emissions.Phoenix.Channel
+  use Emissions.Phoenix.Channel, access: :public
 
   def join(topic, params, socket) do
     if authorized?(socket, topic) do
