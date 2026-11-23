@@ -1,10 +1,20 @@
 name: Release
 
 on:
-  release:
-    types:
-      - released
+  workflow_call:
+    inputs:
+      tag:
+        required: true
+        type: string
+    secrets:
+      HEX_API_KEY:
+        required: true
   workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag to publish
+        required: true
+        type: string
 
 concurrency:
   group: release
@@ -20,6 +30,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v5
+        with:
+          ref: refs/tags/${{ inputs.tag }}
 
       - uses: erlef/setup-beam@v1
         with:
