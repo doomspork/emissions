@@ -4,8 +4,7 @@ defmodule Emissions.Pipeline.Producer do
   to all adapter consumers via `BroadcastDispatcher`.
 
   Events are pushed into this producer by `Emissions.Buffer` on commit.
-  Each adapter consumer subscribes independently and manages its own demand,
-  providing per-adapter backpressure.
+  Broadcast demand is limited by the slowest subscribed consumer.
   """
 
   use GenStage
@@ -27,8 +26,19 @@ defmodule Emissions.Pipeline.Producer do
   ## GenStage callbacks
 
   @impl GenStage
-  def init(_opts) do
-    {:producer, [], dispatcher: GenStage.BroadcastDispatcher}
+  def init(opts) do
+    config = Application.get_env(:emissions, :pipeline, [])
+    size = Keyword.get(opts, :buffer_size, Keyword.get(config, :buffer_size, 10_000))
+    {:producer, [], dispatcher: GenStage.BroadcastDispatcher, buffer_size: size}
+  end
+
+  @impl GenStage
+  def format_discarded(count, _state) do
+    :telemetry.execute([:emissions, :pipeline, :discarded], %{count: count}, %{
+      reason: :buffer_overflow
+    })
+
+    true
   end
 
   @impl GenStage

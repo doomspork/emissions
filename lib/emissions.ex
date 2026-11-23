@@ -15,8 +15,7 @@ defmodule Emissions do
       Emissions.commit()
 
   `commit/0` hands events off to a GenStage pipeline that fans them out to
-  every configured adapter (Kafka, WebSocket, webhooks, etc.) with independent
-  backpressure per consumer.
+  every configured adapter (Kafka, WebSocket, webhooks, etc.) at the pace of the slowest subscribed consumer.
 
   ## Buffer Lifecycle
 
@@ -54,7 +53,8 @@ defmodule Emissions do
 
   Events are handed off to the GenStage producer for fan-out to all configured
   adapters. This call returns immediately — delivery happens asynchronously
-  with backpressure.
+  with best-effort delivery. The return value acknowledges the local handoff.
+  Overflow, adapter failure, or process restarts can lose events.
   """
   @spec commit() :: :ok | {:error, :not_started}
   def commit do

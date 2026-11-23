@@ -1,6 +1,6 @@
 # GenStage Pipeline
 
-Emissions uses a GenStage pipeline to fan out committed events to all configured adapters with independent backpressure per consumer.
+Emissions uses a GenStage pipeline to fan out committed events to all configured adapters using shared broadcast demand.
 
 ## Architecture
 
@@ -40,30 +40,9 @@ Each configured adapter is wrapped in an `Emissions.Pipeline.AdapterConsumer` â€
 
 ## Backpressure
 
-```mermaid
-sequenceDiagram
-    participant P as Producer
-    participant Fast as Fast Consumer (WebSocket)
-    participant Slow as Slow Consumer (Kafka)
+BroadcastDispatcher waits for demand from every subscribed consumer. A stalled adapter therefore delays delivery to healthy adapters once its outstanding demand is exhausted.
 
-    Fast->>P: demand(50)
-    Slow->>P: demand(10)
-    Note over P: Receives committed events
-    P->>Fast: 50 events
-    P->>Slow: 10 events
-    Fast->>P: demand(50)
-    Note over Slow: Still processing...
-    P->>Fast: 50 events
-    Slow->>P: demand(10)
-    P->>Slow: 10 events
-```
-
-GenStage's demand-driven flow means each consumer independently controls how fast it receives events:
-
-- A fast WebSocket adapter can process events immediately
-- A slow Kafka adapter under load naturally applies backpressure
-- The slow adapter does not block the fast one â€” each manages its own demand
-- If all consumers are slow, the producer buffers events internally
+`commit/0` and `flush/0` acknowledge local, asynchronous handoff. The producer keeps up to `pipeline: [buffer_size: 10_000]` pending events by default. On overflow GenStage discards older buffered events, logs a warning and emits `[:emissions, :pipeline, :discarded]` with the discarded count. In-flight messages and request buffers are separate from this limit. Restarts and adapter failures can also lose events. For billing or other durable workflows, persist an outbox entry in the business transaction and retry delivery from that record.
 
 ## Supervision
 

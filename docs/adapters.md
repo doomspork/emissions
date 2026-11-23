@@ -108,7 +108,7 @@ config :emissions,
   ]
 ```
 
-Each adapter gets its own GenStage consumer with independent backpressure. A slow Kafka adapter will not block the WebSocket adapter.
+Each adapter gets its own GenStage consumer with shared broadcast demand. A slow Kafka adapter can delay the WebSocket adapter.
 
 ## Adapter Lifecycle
 

@@ -12,7 +12,7 @@ Emissions provides a structured way to emit events to multiple destinations (Kaf
 
 - **Per-request event buffering** — Collect events during a request/transaction and commit them atomically
 - **Pluggable adapters** — Deliver events to any destination by implementing a simple behaviour
-- **GenStage pipeline** — Fan-out to multiple adapters with independent backpressure per consumer
+- **GenStage pipeline** — Fan-out to multiple adapters with shared backpressure and best-effort delivery
 - **Internal event handlers** — Subscribe to events and handle them in supervised tasks with cascading support
 - **Topic routing** — Optional compile-time event-to-topic mapping
 - **Telemetry** — Comprehensive instrumentation for monitoring and observability
