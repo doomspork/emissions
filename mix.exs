@@ -81,6 +81,7 @@ defmodule Emissions.MixProject do
       extras: [
         "README.md",
         "LICENSE",
+        "CONTRIBUTING.md",
         "docs/adapters.md",
         "docs/handlers.md",
         "docs/buffering.md",

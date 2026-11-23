@@ -1,9 +1,9 @@
 defmodule Emissions.Phoenix.ChannelTest.TestChannel do
-  use Emissions.Phoenix.Channel
+  use Emissions.Phoenix.Channel, access: :public
 end
 
 defmodule Emissions.Phoenix.ChannelTest.AuthChannel do
-  use Emissions.Phoenix.Channel
+  use Emissions.Phoenix.Channel, access: :public
 
   def join("emissions:" <> _rest = topic, %{"token" => "valid"}, socket) do
     super(topic, %{}, socket)
@@ -27,6 +27,7 @@ defmodule Emissions.Phoenix.ChannelTest do
 
   import Phoenix.ChannelTest
 
+  alias Emissions.Phoenix.Channel
   alias Emissions.Phoenix.ChannelTest.{AuthChannel, TestChannel, TestEndpoint}
 
   @endpoint TestEndpoint
@@ -58,6 +59,7 @@ defmodule Emissions.Phoenix.ChannelTest do
       )
 
       assert_push("event", %{name: :test})
+      refute_push("event", %{name: :test})
     end
 
     test "joins an event-name topic" do
@@ -90,6 +92,15 @@ defmodule Emissions.Phoenix.ChannelTest do
   end
 
   describe "topic scoping" do
+    test "requires a trusted matching tenant segment" do
+      policy = {:tenant, :org}
+      check = &Channel.allowed?(&1, "emissions", &2, &3)
+      assert check.(policy, "emissions:a:orders", %{org: "a"})
+      refute check.(policy, "emissions:ab:orders", %{org: "a"})
+      refute check.(policy, "emissions:a", %{})
+      refute check.(:deny, "emissions", %{})
+    end
+
     test "only receives events for the subscribed topic" do
       {:ok, _, _socket} =
         socket(TestEndpoint, nil, %{})

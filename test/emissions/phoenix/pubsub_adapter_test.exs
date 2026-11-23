@@ -3,6 +3,26 @@ defmodule Emissions.Phoenix.PubSubAdapterTest do
 
   alias Emissions.Phoenix.PubSubAdapter
 
+  defmodule FailingAdapter do
+    defdelegate child_spec(opts), to: Phoenix.PubSub.PG2
+    defdelegate node_name(name), to: Phoenix.PubSub.PG2
+    def broadcast(_, "emissions:order_created", _, _), do: {:error, :offline}
+    def broadcast(_, _, _, _), do: :ok
+  end
+
+  test "reports the failed topic and continues independent broadcasts" do
+    pubsub = __MODULE__.PartialDelivery
+    start_supervised!({Phoenix.PubSub, name: pubsub, adapter: FailingAdapter}, id: pubsub)
+    Phoenix.PubSub.subscribe(pubsub, "emissions")
+    {:ok, state} = PubSubAdapter.init(pubsub: pubsub)
+    events = Enum.map([:order_created, :later], &Emissions.Event.new(&1, %{}))
+
+    assert {:error, {:broadcast_failed, [{"emissions:order_created", :offline}]}, ^state} =
+             PubSubAdapter.handle_events(events, state)
+
+    assert_receive {:emissions_event, %{name: :later}}
+  end
+
   defmodule TestRouter do
     use Emissions.TopicRouter,
       mappings: %{
@@ -208,7 +228,7 @@ defmodule Emissions.Phoenix.PubSubAdapterTest do
       assert_receive {:emissions_event, %{name: :user_created}}
     end
 
-    test "falls back to unscoped when scope resolves to nil", %{pubsub: pubsub} do
+    test "drops an event when the configured scope is missing", %{pubsub: pubsub} do
       {:ok, state} = PubSubAdapter.init(pubsub: pubsub, scope: :org_id)
 
       Phoenix.PubSub.subscribe(pubsub, "emissions")
@@ -217,8 +237,7 @@ defmodule Emissions.Phoenix.PubSubAdapterTest do
       event = Emissions.Event.new(:order_created, %{id: 1}, %{})
       assert {:ok, _state} = PubSubAdapter.handle_events([event], state)
 
-      assert_receive {:emissions_event, _payload}
-      assert_receive {:emissions_event, _payload}
+      refute_receive {:emissions_event, _payload}
     end
 
     test "scoped topics work with topic_router", %{pubsub: pubsub} do

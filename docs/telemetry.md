@@ -158,3 +158,7 @@ defmodule MyApp.EmissionsMetrics do
   end
 end
 ```
+
+### Producer overflow
+
+`[:emissions, :pipeline, :discarded]` reports `%{count: discarded_events}` with `reason: :buffer_overflow`.

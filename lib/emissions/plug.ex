@@ -51,8 +51,10 @@ if Code.ensure_loaded?(Plug.Conn) do
       if conn.method in opts.skip_methods do
         conn
       else
-        Emissions.start()
-        Plug.Conn.register_before_send(conn, &before_send(&1, opts))
+        case Emissions.start() do
+          :ok -> Plug.Conn.register_before_send(conn, &before_send(&1, opts))
+          {:error, :already_started} -> conn
+        end
       end
     end
 

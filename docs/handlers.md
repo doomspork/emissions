@@ -146,3 +146,5 @@ The dispatcher filters handlers by calling `handles?/1` (defined by the macro) b
 | Exception raised | Terminated (no events delivered) | Logged via `Logger.error/2` |
 
 In all cases, the handler's event buffer is cleaned up via `Emissions.terminate/0` in an `after` block.
+
+Set `config :emissions, handler_concurrency: 8` to bound simultaneous handler invocations. The default is the number of online schedulers. The dispatcher finishes its batch before accepting the next one.

@@ -3,8 +3,7 @@ defmodule Emissions.Pipeline.AdapterConsumer do
   GenStage consumer that wraps an `Emissions.Adapter` implementation.
 
   One consumer is started per configured adapter. Each subscribes to
-  `Emissions.Pipeline.Producer` and independently manages demand,
-  so a slow adapter won't block others.
+  `Emissions.Pipeline.Producer` and participates in shared broadcast demand.
   """
 
   use GenStage
