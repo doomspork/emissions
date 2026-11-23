@@ -72,8 +72,6 @@ if Code.ensure_loaded?(Phoenix.Channel) do
                topic,
                socket.assigns
              ) do
-            pubsub = socket.endpoint.config(:pubsub_server)
-            Phoenix.PubSub.subscribe(pubsub, topic)
             {:ok, socket}
           else
             {:error, %{reason: "unauthorized"}}

@@ -59,6 +59,7 @@ defmodule Emissions.Phoenix.ChannelTest do
       )
 
       assert_push("event", %{name: :test})
+      refute_push("event", %{name: :test})
     end
 
     test "joins an event-name topic" do
