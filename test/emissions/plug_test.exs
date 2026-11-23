@@ -9,6 +9,19 @@ defmodule Emissions.PlugTest do
     :ok
   end
 
+  test "leaves an existing buffer under its owner's control" do
+    for status <- [200, 500] do
+      :ok = Emissions.start()
+
+      conn(:post, "/")
+      |> Emissions.Plug.call(Emissions.Plug.init([]))
+      |> Plug.Conn.send_resp(status, "")
+
+      assert :ok = Emissions.emit(:still_owned, %{})
+      :ok = Emissions.terminate()
+    end
+  end
+
   describe "init/1" do
     test "returns defaults when no options given" do
       opts = Emissions.Plug.init([])
