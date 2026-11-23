@@ -318,3 +318,6 @@ Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for gui
 ## License
 
 MIT License. See [LICENSE](LICENSE) for details.
+
+Applications using the Phoenix integration should refresh their own lockfiles.
+This project tests Phoenix 1.8.17 and Plug 1.20.4 with the current security fixes.
