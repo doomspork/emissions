@@ -92,8 +92,12 @@ if Code.ensure_loaded?(Phoenix.PubSub) do
 
     @impl true
     def handle_events(events, state) do
-      Enum.each(events, &broadcast_event(&1, state))
-      {:ok, state}
+      failures = Enum.flat_map(events, &broadcast_event(&1, state))
+
+      case failures do
+        [] -> {:ok, state}
+        failures -> {:error, {:broadcast_failed, failures}, state}
+      end
     end
 
     defp broadcast_event(event, state) do
@@ -102,7 +106,13 @@ if Code.ensure_loaded?(Phoenix.PubSub) do
 
       event
       |> resolve_topics(state)
-      |> Enum.each(&Phoenix.PubSub.broadcast(state.pubsub, &1, message))
+      |> Enum.uniq()
+      |> Enum.flat_map(fn topic ->
+        case Phoenix.PubSub.broadcast(state.pubsub, topic, message) do
+          :ok -> []
+          {:error, reason} -> [{topic, reason}]
+        end
+      end)
     end
 
     defp resolve_topics(event, state) do
