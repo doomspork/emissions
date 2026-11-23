@@ -17,38 +17,34 @@ defmodule Emissions.HandlerDispatcher do
   @impl Emissions.Adapter
   def init(_opts) do
     handlers = Application.get_env(:emissions, :handlers, [])
-    {:ok, %{handlers: handlers}}
+    limit = Application.get_env(:emissions, :handler_concurrency, System.schedulers_online())
+
+    if is_integer(limit) and limit > 0 do
+      {:ok, %{handlers: handlers, concurrency: limit}}
+    else
+      {:error, :invalid_handler_concurrency}
+    end
   end
 
   @impl Emissions.Adapter
   def handle_events(events, state) do
-    for event <- events do
-      dispatch(event, state.handlers)
-    end
+    jobs =
+      for event <- events,
+          handler <- state.handlers,
+          handler_matches?(handler, event.name),
+          do: {handler, event}
+
+    Emissions.TaskSupervisor
+    |> Task.Supervisor.async_stream_nolink(
+      jobs,
+      fn {handler, event} -> run_handler(handler, event) end,
+      max_concurrency: state.concurrency,
+      ordered: false,
+      timeout: :infinity
+    )
+    |> Stream.run()
 
     {:ok, state}
-  end
-
-  defp dispatch(event, handlers) do
-    applicable = Enum.filter(handlers, &handler_matches?(&1, event.name))
-
-    for handler <- applicable do
-      start_handler_task(handler, event)
-    end
-  end
-
-  defp start_handler_task(handler, event) do
-    case Task.Supervisor.start_child(Emissions.TaskSupervisor, fn ->
-           run_handler(handler, event)
-         end) do
-      {:ok, _pid} ->
-        :ok
-
-      {:error, reason} ->
-        Logger.error(
-          "Failed to start task for handler #{inspect(handler)} on #{event.name}: #{inspect(reason)}"
-        )
-    end
   end
 
   defp handler_matches?(handler, event_name) do
